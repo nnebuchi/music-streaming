@@ -388,7 +388,6 @@ exports.deleteAccount = async (user, res) => {
 // }
 
 exports.updateProfilePhoto = async (req, directory, res, db_col=null) => {
-    console.log(db_col);
     
     if (req.file) {
         const disk = process.env.ACTIVE_DISK;

@@ -20,15 +20,24 @@ model Users {
     is_verified         Int @default(0)
     is_artise           Boolean @default(false)
     slug                String?
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt @default(now())
+    // Relationships
     socialProfiles      UserSocialProfiles[]
-    // Self-referencing many-to-many relation
     artistes            ArtisteToFollower[] @relation("FollowerArtistes")
     followers           ArtisteToFollower[] @relation("ArtisteFollowers")
     likedTracks         TrackLike[]
+    likedDiscussions    DiscussionLike[]
+    discussions         Discussions[]
+    discussionComments  DiscussionComments[]
+    likedComments       CommentLikes[]
     listenedTracks      TrackListen[]
     tracks              Tracks[]
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt @default(now())
+    orders              orders[]
+    transactions        transactions[]
+    playlists           Playlists[]   @relation("UserPlaylists")    // One-to-many relationship with Playlists
+    subscribedPlaylists PlaylistSubscribers[] // Many-to-many for subscribed playlists
+    
 }
 
 model Otps {
@@ -69,12 +78,16 @@ model UserSocialProfiles {
 
 
 model Albums{
-    id          Int     @id @default(autoincrement())
-    title       String
-    slug        String
-    user_id     Int
-    cover       String
-    description String @db.Text
+    id              Int     @id @default(autoincrement())
+    title           String
+    slug            String
+    user_id         Int
+    cover           String?
+    description     String? @db.Text
+    release_date    Int ?
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt @default(now())
+    tracks          Tracks[]
 }
 
 model Tracks{
@@ -87,13 +100,15 @@ model Tracks{
     cover           String?
     file            String?
     video_file      String?
-    album_id        Int @default(0)
+    album_id        Int?
+    album           Albums?   @relation(fields: [album_id], references: [id]) // Optional many-to-one relation to Album 
     release_date    String?
     featured        String?
     about           String? @db.Text
     genres          TrackToGenres[]
     likes           TrackLike[]
     listens         TrackListen[]
+    playlists       PlaylistTracks[]     // Many-to-many relation with Playlists
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
 }
@@ -154,4 +169,126 @@ model TrackListen {
     user        Users  @relation(fields: [user_id], references: [id])
     created_at  DateTime @default(now())
     updated_at  DateTime    @updatedAt @default(now())
+}
+
+model Playlists {
+    id              Int                  @id @default(autoincrement())
+    title           String
+    description     String?              @db.Text
+    cover_photo     String?              @db.Text
+    owner_id        Int
+    owner           Users                @relation("UserPlaylists", fields: [owner_id], references: [id]) // Relation to Users as owner
+    tracks          PlaylistTracks[]     // Many-to-many relation with Tracks
+    subscribers     PlaylistSubscribers[]// Many-to-many for Users subscribing to playlist
+    created_at      DateTime             @default(now())
+    updated_at      DateTime             @updatedAt @default(now())
+}
+
+model PlaylistTracks {
+    id              Int                  @id @default(autoincrement())
+    playlist_id     Int
+    track_id        Int
+    playlist        Playlists @relation(fields: [playlist_id], references: [id])
+    track           Tracks    @relation(fields: [track_id], references: [id])
+}
+
+model PlaylistSubscribers {
+    id              Int                  @id @default(autoincrement())
+    playlist_id     Int
+    user_id         Int
+    playlist        Playlists @relation(fields: [playlist_id], references: [id])
+    user            Users     @relation(fields: [user_id], references: [id])
+}
+
+model Tags {
+    id          Int    @id @default(autoincrement())
+    title       String 
+    slug        String
+    Discussions TagsToDiscussions[]
+    
+}
+
+model Discussions {
+    id          Int    @id @default(autoincrement())
+    user_id     Int
+    title       String
+    body        String @db.Text
+    created_at  DateTime @default(now())
+    updated_at  DateTime    @updatedAt @default(now())
+    tags        TagsToDiscussions[]
+    likes       DiscussionLike[]
+    comments    DiscussionComments[]
+    author      Users @relation(fields: [user_id], references: [id])
+}
+
+model TagsToDiscussions {
+    id            Int     @id @default(autoincrement())
+    discussion_id  Int
+    tag_id  Int
+    discussion    Discussions  @relation(fields: [discussion_id], references: [id])
+    tag           Tags  @relation(fields: [tag_id], references: [id])
+    
+}
+
+model DiscussionLike {
+    id              Int    @id @default(autoincrement())
+    discussion_id   Int
+    user_id         Int
+    discussion      Discussions @relation(fields: [discussion_id], references: [id])
+    user            Users  @relation(fields: [user_id], references: [id])
+}
+
+model DiscussionComments {
+    id              Int    @id @default(autoincrement())
+    discussion_id   Int
+    user_id         Int
+    comment         String  @db.Text
+    discussion      Discussions @relation(fields: [discussion_id], references: [id])
+    user            Users  @relation(fields: [user_id], references: [id])
+    parent          Int?
+    likes           CommentLikes[]
+    parent_comment  DiscussionComments? @relation("CommentToReplies", fields: [parent], references: [id])
+    replies         DiscussionComments[] @relation("CommentToReplies")
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt @default(now())
+
+}
+
+model CommentLikes {
+    id              Int    @id @default(autoincrement())
+    comment_id   Int
+    user_id      Int
+    comment      DiscussionComments @relation(fields: [comment_id], references: [id])
+    user         Users  @relation(fields: [user_id], references: [id])
+}
+
+model products {
+    id          Int    @id @default(autoincrement())
+    name        String
+    price       Decimal @db.Decimal(10, 2)
+    orders      orders[]
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt @default(now())
+}
+
+model orders {
+    id              Int    @id @default(autoincrement())
+    product_id      Int
+    user_id         Int
+    product         products @relation(fields: [product_id], references: [id])
+    user            Users  @relation(fields: [user_id], references: [id])
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt @default(now())
+}
+
+model transactions {
+    id              Int     @id @default(autoincrement())
+    description     String
+    amount          Decimal @db.Decimal(10, 2)
+    payer_email     String
+    user_id         Int?
+    user            Users?  @relation(fields: [user_id], references: [id])
+    order_id        Int?
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt @default(now())
 }

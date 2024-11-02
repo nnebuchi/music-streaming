@@ -26,7 +26,6 @@ exports.user_middleware = async (params, next) => {
 };
 
 exports.song_middleware = async (params, next) => {
-  console.log('Song middleware executed');
   
   try {
     const result = await next(params);
@@ -40,7 +39,6 @@ exports.song_middleware = async (params, next) => {
           'aggregate'
         ].includes(params.action)
     ) {
-      console.log('Updating track files');
       
       if (Array.isArray(result)) {
         result.forEach(async (track) => {
@@ -62,8 +60,6 @@ exports.song_middleware = async (params, next) => {
         }
       }
     }
-
-    console.log('Song middleware finished');
     
     return result;
   } catch (error) {
@@ -72,10 +68,50 @@ exports.song_middleware = async (params, next) => {
   }
 };
 
-// exports.song_middleware = async (params, next) => {
-//   const result = await next(params);
 
-//   if (params.model === 'Tracks' && 
+exports.discussionComments_middleware = async (params, next) => {
+    const result = await next(params);
+
+    // Check if the model is 'DiscussionComments' and the action is relevant
+    if (params.model === 'DiscussionComments' &&
+        [
+            'findUnique',
+            'findMany',
+            'findFirst',
+            'groupBy',
+            'aggregate'
+        ].includes(params.action)
+    ) {
+        // Handle multiple results (findMany, aggregate, groupBy)
+        if (Array.isArray(result)) {
+            await Promise.all(result.map(async (comment) => {
+                if (comment.user) {
+                    // Modify the profile_photo of the nested user
+                    comment.user.profile_photo = await fileBaseUrl(comment.user.profile_photo);
+                }
+                if (comment.likes) {
+                  // Modify the profile_photo of the nested user
+                  comment.likedByUser = comment.likes.length > 0 ? true : false;
+                  delete comment.likes;
+                }
+            }));
+        } else {
+            // Handle a single result (findUnique, findFirst)
+            if (result.user) {
+                // Modify the profile_photo of the nested user
+                result.user.profile_photo = await fileBaseUrl(result.user.profile_photo);
+            }
+            if (result.likes) {
+              // Modify the profile_photo of the nested user
+              result.likedByUser = result.likes.length > 0 ? true : false;
+              delete result.likes;
+            }
+        }
+    }
+
+    return result;
+};
+
 //       [
 //         'findUnique', 
 //         'findMany', 

@@ -15,6 +15,119 @@ const {slugify} = require('../utils/generic');
 const { stat } = require('fs');
 const { moveTrackFileToCloudinary, handleCloudinaryUpload, uploadToCloudinary } = require('./fileService');
 
+exports.createAlbum = async (req, res) => {
+  try {
+    await prisma.albums.create({
+      data:{
+        title: req.body.title,
+        slug: await slugify(req.body.title),
+        user_id:req.user.id,
+        description:req.body.description,
+        release_date: req.body.release_date
+      },
+    })
+
+    return res.status(200).json({
+      status:"success",
+      message:"New Album Created"
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status:"fail",
+      message:"Failed to create Album",
+      error:error
+    })
+  }
+}
+
+exports.handleAlbumCover = async (req, directory, res) => {
+  if (req.file) {
+    const disk = process.env.ACTIVE_DISK;
+    let filePath;
+    try {
+      if (disk === 'cloudinary') {
+        filePath = await uploadToCloudinary(req, directory); 
+      } else {
+          filePath = req.file.path;
+      }
+          
+      const cover_path = disk == 'cloudinary' ? await extractDynamicPart(filePath) : filePath
+      const update_album = await this.updateAlbum(req.body.album_id, {cover:cover_path});
+      if(update_album.status){
+        return res.status(200).json({
+          status: 'success',
+          message: "Track cover photo updated"
+        });
+      }else{
+        return res.status(400).json({
+          status: 'fail',
+          message: update_album.message,
+          error:update_album.error
+        });
+      }
+    }catch (error) {
+      console.error(error);
+      return res.status(200).json({
+        status: 'fail',
+        message: 'Track cover update failed',
+        error: error,
+      });
+    }
+  }else {
+    res.send('No file uploaded.');
+  }
+}
+
+exports.updateAlbum = async (album_id, album_data) => {
+  try {
+    
+    // Find the track by ID
+    const album = await prisma.albums.findUnique({
+      where: {
+        id: parseInt(album_id)
+      }
+    });
+
+    if (!album) {
+     
+      return {
+        status: false,
+        error: "Album not found"
+      };
+    }
+    if(album.cover && album_data.cover){
+      if (process.env.ACTIVE_DISK === 'cloudinary') {
+        const publicId = track.cover.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      } else if (process.env.ACTIVE_DISK === 'local') {
+        // Delete local file
+        if (fs.existsSync(`./public/uploads/album_covers/${track.cover}`)) {
+          fs.unlinkSync(`./public/uploads/album_covers/${track.cover}`);
+        }
+      }
+    }
+    const updatedalbum = await prisma.albums.update({
+      where: {
+        id: parseInt(album_id)
+      },
+      data: album_data
+    });
+
+    return {
+      status: true,
+      message: 'Album updated successfully',
+      data: updatedalbum
+    };
+
+  } catch (error) {
+    console.log(error);
+    return {
+      status: false,
+      error: error.message || "An error occurred"
+    };
+  }
+};
 exports.create = async(song_data, user) => {
     try {
       if(typeof song_data.featured != 'object' ){
@@ -123,6 +236,9 @@ exports.handleTrackCover = async (req, directory, res) => {
   }
 }
 
+
+
+
 exports.update = async (track_id, song_data) => {
   try {
     // Find the track by ID
@@ -201,6 +317,8 @@ exports.update = async (track_id, song_data) => {
 
 
 exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
+  console.log("type", type);
+  
   const { originalname, chunkIndex, totalChunks, track_id } = req.body;
   const tempPath = req.file.path;
   let uploadDir = file_disks[disk]['root'];
@@ -312,6 +430,12 @@ exports.list = async (parsedUrl, user, res) => {
         });
       }
     }
+
+    // exclude tracks where both "file" and "video_file" fields are NULL or empty at the same timee
+    where.OR = [
+      { file: { not: null } },
+      { video_file: { not: null } },
+    ];
 
     query.where = where;
 
@@ -634,7 +758,6 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
     // Exclude selected track
     whereClauses.push(`tracks.id != ?`);
     queryParams.push(parseInt(selected_track_id));
-
     let whereQuery = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     // Randomize results if options.latest is falsy, otherwise order by creation date
@@ -654,6 +777,9 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
       ${orderByClause}
       LIMIT 50;
     `, ...queryParams);
+
+    console.log(tracks);
+    
 
     const totalTracksCount = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) as count
@@ -715,7 +841,7 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
 
 
 
-exports.playTrack = async (track_id, parsedUrl, user, res) => {
+exports.playTrack = async (trackId, parsedUrl, user, res) => {
 
   
   const queryString = parsedUrl.query;
@@ -736,8 +862,30 @@ exports.playTrack = async (track_id, parsedUrl, user, res) => {
         break;
     }
   }
+ 
+  return this.tracksList(option, user, trackId, res)
+ 
+}
 
-  return this.tracksList(option, user, track_id, res)
+exports.playTrackBySlug = async (slug, res) => {
+  const track = await prisma.tracks.findFirst({
+    where: {
+      slug: slug
+    }
+   });
+
+  if (!track) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Track not found",
+    });
+  }
+ 
+  return res.status(404).json({
+    status: "success",
+    track: track,
+  });
+  
 }
 
 
@@ -837,3 +985,239 @@ exports.updatePlayStatus = async (user, track_id, play_id, status, res) => {
     })
   }
 }
+
+exports.createPlaylist = async (req, res) => {
+  try {
+    const new_playlist = await prisma.playlists.create({
+      data:{
+        owner_id: req.user.id,
+        title: req.body.title,
+        description: req.body.description,
+      }
+    })
+
+    if(new_playlist){
+
+    }
+
+    // if(new_playlist){
+      return res.status(200).json({
+        status:"success",
+        playlist: new_playlist,
+        message:"Playlist successfully created"
+      })
+    // }
+    
+  } catch (error) {
+    
+    return res.status(400).json({
+      status:"fail",
+      error: error,
+      message:"Failed to create Playlist"
+    })
+  }
+  
+}
+
+exports.addTracksToPlayList = async (req_data, res) => {
+    
+  const track_ids = req_data.track_ids;
+  const playlist_id = parseInt(req_data.playlist_id);
+  const user_id =  parseInt(req_data.user_id);
+  
+  try {
+    
+    const playList = await prisma.playlists.findFirst({
+      where: { id:playlist_id, owner_id:user_id },
+      include:{
+        tracks: true,
+      }
+    });
+    if(!playList){
+      return res.status(404).json({ status: "fail", message:"Playlist not found" });
+    }
+    
+    playListTrackIds = playList.tracks.map(track => track.track_id)
+    
+    track_ids.forEach( async track_id => {
+      if(!playListTrackIds.includes(track_id)){
+        await prisma.playlistTracks.create({
+          data:{
+            playlist_id: playlist_id,
+            track_id:track_id,
+          }
+        })
+      }
+    });
+
+    return res.status(200).json({ status: "success", message:"song added to playlist "+playList.title });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error adding song to playlist' });
+  }
+};
+
+exports.removeTracksToPlayList = async (req_data, res) => {
+    
+  const track_ids = req_data.track_ids;
+  const playlist_id = parseInt(req_data.playlist_id);
+  const user_id =  parseInt(req_data.user_id);
+  
+  try {
+    
+    const playList = await prisma.playlists.findFirst({
+      where: { id:playlist_id, owner_id:user_id },
+    });
+    if(!playList){
+      return res.status(404).json({ status: "fail", message:"Playlist not found" });
+    }
+    
+    await prisma.playlistTracks.deleteMany({
+      where: {
+        playlist_id:playList.id,
+        track_id: {
+          in: track_ids, 
+        },
+      },
+    })
+    
+
+    return res.status(200).json({ status: "success", message:"song removed from playlist "+playList.title });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error removing song to playlist' });
+  }
+};
+
+exports.deletePlaylist = async (id, user_id, res) => {
+  try {
+    const playlist = await prisma.playlists.findFirst({
+      where: {
+        id: id,
+        owner_id: user_id
+      }
+    });
+
+    if (!playlist) {
+      return res.status(200).json({
+        status: 'fail',
+        message: "Playlist does not exist or you are not authorised to modify the playlist"
+      });
+    }
+
+    // Delete associated tracks first
+    await prisma.playlistTracks.deleteMany({
+      where: {
+        playlist_id: parseInt(id),
+      }
+    });
+
+    // Delete the playlist after deleting tracks
+    await prisma.playlists.delete({
+      where: {
+        id: parseInt(id)
+      }
+    });
+
+    // Send success response after deleting the playlist
+    return res.status(200).json({
+      status: 'success',
+      message: "Playlist deleted"
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status: 'fail',
+      message: "Something went wrong",
+      error: error
+    });
+  }
+}
+
+
+exports.myPlaylists = async (req, res) => {
+  try {
+    const playlists = await prisma.playlists.findMany({
+      where:{
+        owner_id:req.user.id,
+      },
+      include:{
+        tracks:{
+          include:{
+            track:true
+          }
+        }
+        
+      }
+    });
+
+    return  res.status(200).json({
+      status:"success",
+      data: playlists,
+    })
+  } catch (error) {
+    console.log(error);
+    
+    return  res.status(400).json({
+      status:"fail",
+      error: error,
+      message: "Error getting playlist"
+    })
+  }
+  
+}
+
+exports.reorderPlaylist = async (playlist_id, user_id, track_ids, res) => {
+  try {
+    const playList = await prisma.playlists.findFirst({
+      where: { id:playlist_id, owner_id:user_id },
+    });
+    if(!playList){
+      return res.status(404).json({ status: "fail", message:"Playlist not found" });
+    }
+    
+    
+    await prisma.playlistTracks.deleteMany({
+      where: {
+        playlist_id:playList.id,
+        track_id: {
+          in: track_ids, 
+        },
+      },
+    });
+
+    track_ids.forEach( async track_id => {
+        await prisma.playlistTracks.create({
+          data:{
+            playlist_id: playlist_id,
+            track_id:track_id,
+          }
+        })
+    });
+    
+    return res.status(200).json({ status: "success", message:"playlist reordered successfully" });
+  } catch (error) {
+    console.log(error);
+    
+    return  res.status(400).json({
+      status:"fail",
+      error: error,
+      message: "Something went wrong"
+    })
+  }
+  
+}
+
+
+
+// exports.deletePlaylist = async (user_id, playlist_id) => {
+//   const delete_list = await prisma.playlists.delete({
+//     where:{
+//       id:playlist_id,
+//       owner_id:user_id
+//     }
+//   });
+//   return delete_list; 
+  
+// }

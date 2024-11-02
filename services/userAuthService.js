@@ -26,7 +26,7 @@ exports.createUser = async(user_data, res) => {
                 
                 return res.status(201).json({
                     status:"success",
-                    message:`Registration successful, use ${handleOtp.otp} as your OTP to verify your account while we fix our mail server`,
+                    message:`Registration successful, check your mail for a verification code`,
                     // message:"Registration successful, check your email for a verification code",
                     token: auth?.token
                 });
@@ -83,10 +83,10 @@ const sendOtp = async (mail_data, res) => {
         
         mail_data.code = code;
         if(storeOtp){
-            return {
-                status: true,
-                otp:code
-            };  
+            // return {
+            //     status: true,
+            //     otp:code
+            // };  
                 
             const mail_res = await send_mail(mail_data, mail_data.purpose.replaceAll('_', " ").toUpperCase(), "Gracious Hearts Music", res)
             // return
@@ -231,6 +231,8 @@ const authenticate = async (email, password) => {
             }
         }
     } catch (error) {
+        console.log(error);
+        
         return{
             status:false,
             error:error
@@ -265,6 +267,8 @@ exports.loginUser = async(req_data, res) => {
         // }
        
     } catch (error) {
+        console.log(error);
+        
         return res.status(400).json({ 
             status: 'fail',
             error: error.message

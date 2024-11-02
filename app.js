@@ -10,12 +10,7 @@ const app = express();
 const port = process.env.PORT;
 
 // CORS middleware
-app.use(cors({ origin: ['http://192.168.0.6:5173', 'http://localhost:5173', 'http://127.0.0.1:5502'] }));
-// app.use((req, res, next) => {
-//     res.header('Access-Control-Allow-Origin', '*'); // Replace '*' with specific origin if needed
-//     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-//     next();
-//   });
+app.use(cors({ origin: ['http://192.168.0.6:5173', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://192.168.0.6:5173'] }));
 
 app.use(bodyParser.json());
 
@@ -26,13 +21,14 @@ app.use(express.static('public'));
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const genericRoutes = require('./routes/genericRoutes');
-const songRouters = require('./routes/songRoutes');
-
+const songRoutes = require('./routes/songRoutes');
+const communityRoutes = require('./routes/communityRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/app', genericRoutes);
-app.use('/song', songRouters);
+app.use('/song', songRoutes);
+app.use('/community', communityRoutes)
 
 // Error handling middleware (optional)
 // app.use((err, req, res, next) => {

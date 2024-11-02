@@ -36,6 +36,9 @@ exports.extractDynamicPart = async (filePath) => {
 }
 
 exports.fileBaseUrl = async (filePath) => {
+  if(!filePath){
+    return null;
+  }
   const fileArray = filePath.split('.');
   console.log(fileArray);
   
@@ -45,7 +48,7 @@ exports.fileBaseUrl = async (filePath) => {
 
   const audios =  audioFileExtensions = [ "mp3", "wav", "aac", "ogg", "flac", "wma", "alac", "aiff", "m4a", "m4b", "m4r", "mp2", "mp1", "ape", "mac", "shn", "cue", "m3u", "m3u8", "pls", "xsp", "ram", "ra", "rm", "ogg", "vorbis", "opus", "ac3", "dts", "dts-hd", "dtsx", "thd", "thd-ma", "thd-hr", "thd-hr-ma"];
 
-  const fileType =  images.includes(fileArray[fileArray.length - 1]) ? "image" : videos.includes(fileArray[fileArray.length - 1]) ? "video" : audios.includes(fileArray[fileArray.length - 1]) ? "audio" : "image";
+  const fileType =  images.includes(fileArray[fileArray.length - 1]) ? "image" : videos.includes(fileArray[fileArray.length - 1]) ? "video" : audios.includes(fileArray[fileArray.length - 1]) ? "video" : "image";
   // console.log(`${process.env.ASSET_URL}/${fileType}/upload/${filePath}`);
   
   return `${process.env.ASSET_URL}/${fileType}/upload/${filePath}`;

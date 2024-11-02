@@ -20,3 +20,23 @@ exports.validateTrackOwnership = async (req, res, next) => {
       })
     }
   }
+
+  
+exports.validateAlbumOwnership = async (req, res, next) => {
+    console.log(req?.user?.id);
+    
+  const album = await prisma.albums.findFirst({
+    where: {
+      id: parseInt(req?.body?.album_id),
+      user_id: parseInt(req?.user?.id)
+    }
+  })
+  if(album){
+    next()
+  }else{
+    res.status(300).json({
+      status: 'fail',
+      message: 'You are not Authorized to modify this album'
+    })
+  }
+}

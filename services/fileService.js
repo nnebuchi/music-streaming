@@ -95,6 +95,8 @@ const saveFile = (directory, disk = 'local') => {
           cb(null, `${file_path}/${directory}`);
         },
         filename: async (req, file, cb) => {
+          console.log("file", file);
+          
           cb(null, await renameUploadedFile(file.originalname));
         },
       });
@@ -104,6 +106,7 @@ const saveFile = (directory, disk = 'local') => {
       return {
         storage: multer.memoryStorage(),
         fileFilter: (req, file, cb) => {
+          console.log("file: ", file)
           if (!file.mimetype.match(/jpg|jpeg|png|gif$/i)) {
             cb(null, false);
           } else {
@@ -192,7 +195,7 @@ exports.moveTrackFileToCloudinary = async (localFilePath, directory) => {
       folder: process.env.CLOUDINARY_ROOT+directory,
       resource_type: 'auto',
     });
-    return result.secure_url;
+    return result.url;
   } catch (error) {
     console.error(error);
     throw error;

@@ -81,6 +81,6 @@ exports.tokenIsBlackListed = async (raw_token) => {
 }
 
 // exports.
-exports.userCast = ["id", "password", "created_at", "updated_at"];
+exports.userCast = ["password", "created_at", "updated_at"];
 
 exports.creatorCast = ["password", "created_at", "updated_at"];
