@@ -21,7 +21,7 @@ jobs:
           USERNAME: ${{ secrets.SERVER_USERNAME }}
           PASSWORD: ${{ secrets.SERVER_PASSWORD }}
           TARGET_DIR: /var/www/api.graciousheartsmusic.com
-        run: |
+         script: |
           cd /var/www/api.graciousheartsmusic.com/
           sh ./.scripts/deploy.sh
           
