@@ -322,6 +322,11 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
     const where = {
       discussion_id:parseInt(discussion_id)
     }
+    const page = queryString.page ? parseInt(queryString.page) : 1;
+    const page_size = parseInt(process.env.COMMENT_PER_PAGE);
+
+    query.skip = (page - 1) * page_size;
+    query.take = page_size;
     query.where = where
     query.include = {
       user:{
@@ -376,8 +381,7 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
       //   delete comment.likes;  // Remove the 'likes' field from the response if not needed
       //   return comment;
       // });
-      const page = queryString.page ? parseInt(queryString.page) : 1;
-      const page_size = parseInt(process.env.COMMENT_PER_PAGE);
+      
       const totalCommentsCount = await prisma.discussionComments.count({where});
       const totalPages = Math.ceil(totalCommentsCount / page_size);
       const paginatedResult = {
