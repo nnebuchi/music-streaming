@@ -1,44 +1,33 @@
-name: Deploy API Application
-
 on:
   push:
     branches:
       - master
 
+name: 🚀 Ftp upload website on push
 jobs:
-  deploy:
+  web-deploy:
+    name: 🎉 Deploy
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository code
-      - name: Check out the code
-        uses: actions/checkout@v3
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v2
+    
+    - name: 📂 Sync files
+      uses: SamKirkland/FTP-Deploy-Action@4.2.0
+      with:
+        server: ${{ secrets.HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        server-dir: /var/www/api.graciousheartsmusic.com
 
-      # Step 2: Set up Node.js (match the version with your project version)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.17.1'
-
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: npm install
-
-      # Step 4: Deploy to Server (no build step needed)
-      - name: Deploy to Server
-        env:
-          HOST: ${{ secrets.HOST }}
-          USERNAME: ${{ secrets.SERVER_USERNAME }}
-          PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-          TARGET_DIR: /var/www/api.graciousheartsmusic.com
-        run: |
-          # Transfer files to server using sshpass
-          sshpass -p "$PASSWORD" rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            ./ ${USERNAME}@${HOST}:${TARGET_DIR}
-
-          # Restart the API using PM2
-          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ${USERNAME}@${HOST} << 'EOF'
-            cd ${TARGET_DIR}
-            pm2 reload api-server || pm2 start app.js --name api-server
-          EOF
+    - name: 📂 Run SSH Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        port: ${{ secrets.PORT }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        script: |
+          cd /var/www/api.graciousheartsmusic.com
+          sh ./.scripts/deploy.sh
+          
