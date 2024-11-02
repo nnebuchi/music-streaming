@@ -18,7 +18,7 @@ jobs:
         server: ${{ secrets.HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         password: ${{ secrets.SERVER_PASSWORD }}
-        server-dir: /var/www/api.graciousheartsmusic.com
+        server-dir: /var/www/api.graciousheartsmusic.com/
 
     - name: 📂 Run SSH Commands
       uses: appleboy/ssh-action@master
@@ -28,6 +28,6 @@ jobs:
         port: ${{ secrets.PORT }}
         password: ${{ secrets.SERVER_PASSWORD }}
         script: |
-          cd /var/www/api.graciousheartsmusic.com
+          cd /var/www/api.graciousheartsmusic.com/
           sh ./.scripts/deploy.sh
           
