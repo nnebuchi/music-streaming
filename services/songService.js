@@ -444,6 +444,8 @@ exports.list = async (parsedUrl, user, res) => {
     }
 
     const page = queryString.page ? parseInt(queryString.page) : 1;
+    console.log("page: " + page);
+    
     const page_size = parseInt(process.env.TRACK_PER_PAGE);
 
     query.skip = (page - 1) * page_size;

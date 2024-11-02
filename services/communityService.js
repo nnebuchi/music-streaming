@@ -320,7 +320,8 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
     const queryString = parsedUrl.query;
     const query = {};
     const where = {
-      discussion_id:parseInt(discussion_id)
+      discussion_id:parseInt(discussion_id),
+      parent:null
     }
     const page = queryString.page ? parseInt(queryString.page) : 1;
     const page_size = parseInt(process.env.COMMENT_PER_PAGE);
@@ -375,6 +376,7 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
       }
     }
     const comments = await prisma.discussionComments.findMany(query);
+    
     if(comments){
       // const modifiedcomments = comments.map(comment => {
       //   comment.likeByUser = comment.likes.length > 0;  // If there's a like by the user, set likeByUser to true
