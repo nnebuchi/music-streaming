@@ -27,7 +27,7 @@ jobs:
       # Step 4: Deploy to Server (no --delete flag to keep existing files intact)
       - name: Deploy to Server
         env:
-          HOST: your_server_ip
+          HOST: ${{ secrets.HOST }}
           USERNAME: ${{ secrets.SERVER_USERNAME }}
           PASSWORD: ${{ secrets.SERVER_PASSWORD }}
           TARGET_DIR: /var/www/api.graciousheartsmusic.com
