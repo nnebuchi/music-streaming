@@ -1,27 +1,32 @@
-name: Deploy API Application
-
 on:
   push:
     branches:
       - master
 
+name: 🚀 Ftp upload website on push
 jobs:
-  deploy:
+  web-deploy:
+    name: 🎉 Deploy
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the repository code
-      - name: Check out the code
-        uses: actions/checkout@v3
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v2
+    
+    - name: 📂 Sync files
+      uses: SamKirkland/FTP-Deploy-Action@4.2.0
+      with:
+        server: graciousheartsmusic.com
+        username: ${{ secrets.SERVER_USERNAME }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        server-dir: /var/www/api.graciousheartsmusic.com/
 
-      # Step 4: Deploy to Server (no build step needed)
-      - name: Deploy to Server
-        env:
-          HOST: ${{ secrets.HOST }}
-          USERNAME: ${{ secrets.SERVER_USERNAME }}
-          PASSWORD: ${{ secrets.SERVER_PASSWORD }}
-          TARGET_DIR: /var/www/api.graciousheartsmusic.com
-         script: |
-          cd /var/www/api.graciousheartsmusic.com/
+    - name: 📂 Run SSH Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        port: ${{ secrets.PORT }}
+        password: ${{ secrets.SERVER_PASSWORD }}
+        script: |
+          cd /var/www/api.graciousheartsmusic.com
           sh ./.scripts/deploy.sh
-          

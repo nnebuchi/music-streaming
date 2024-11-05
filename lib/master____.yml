@@ -1,0 +1,44 @@
+name: Deploy API Application
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js (match the version with your project version)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.17.1'
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Deploy to Server (no --delete flag to keep existing files intact)
+      - name: Deploy to Server
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.SERVER_USERNAME }}
+          PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          TARGET_DIR: /var/www/api.graciousheartsmusic.com
+        run: |
+          # Transfer files to server using sshpass without deleting existing files
+          sshpass -p "$PASSWORD" rsync -avz \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${USERNAME}@${HOST}:${TARGET_DIR}
+
+          # Restart the API using PM2
+          sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no ${USERNAME}@${HOST} << 'EOF'
+            cd ${TARGET_DIR}
+            pm2 reload api-server || pm2 start app.js --name api-server
+          EOF
