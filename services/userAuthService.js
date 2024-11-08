@@ -279,7 +279,7 @@ exports.loginUser = async(req_data, res) => {
 
 exports.logoutUser = async(token, exp, res) => {
     try {
-        await prisma.blackListToken.create({
+        await prisma.blacklisttoken.create({
             data:{
                 token:token,
                 exp:exp

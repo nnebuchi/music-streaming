@@ -7,7 +7,7 @@ exports.addFollower = async (req, res) => {
         const user = req.user;
 
         // Check if the user is already following the creator
-        const existingFollower = await prisma.artisteToFollower.findFirst({
+        const existingFollower = await prisma.artistetofollower.findFirst({
             where: {
                 artiste_id: creator_id,
                 follower_id: user.id,
@@ -16,7 +16,7 @@ exports.addFollower = async (req, res) => {
 
         if (existingFollower) {
             // If they are following, remove the follower
-            await prisma.artisteToFollower.delete({
+            await prisma.artistetofollower.delete({
                 where: { id: existingFollower.id },
             });
             return res.status(200).json({
@@ -26,7 +26,7 @@ exports.addFollower = async (req, res) => {
         }
 
         // If not following, add as a follower
-        await prisma.artisteToFollower.create({
+        await prisma.artistetofollower.create({
             data: {
                 artiste_id: creator_id,
                 follower_id: user.id,

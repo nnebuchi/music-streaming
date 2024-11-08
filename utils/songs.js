@@ -23,8 +23,8 @@ exports.validateTrackOwnership = async (req, res, next) => {
 
   
 exports.validateAlbumOwnership = async (req, res, next) => {
-    console.log(req?.user?.id);
-    
+  console.log(req?.body);
+  
   const album = await prisma.albums.findFirst({
     where: {
       id: parseInt(req?.body?.album_id),

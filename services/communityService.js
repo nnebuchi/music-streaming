@@ -24,7 +24,7 @@ exports.createPost = async (req, res) => {
         
         tags.forEach(async (tag) => {
             
-            await prisma.tagsToDiscussions.create({
+            await prisma.tagstodiscussions.create({
               data: {
                 discussion: {
                     connect: { id: post.id }
@@ -241,7 +241,7 @@ exports.tags = async (res) => {
 exports.addComment = async (user_id,  discussion_id, parent, comment, res) => {
 
   try {
-    const postComment = await prisma.discussionComments.create({
+    const postComment = await prisma.discussioncomments.create({
       data:{
         comment:comment,
         discussion_id: parseInt(discussion_id),
@@ -375,7 +375,7 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
         }
       }
     }
-    const comments = await prisma.discussionComments.findMany(query);
+    const comments = await prisma.discussioncomments.findMany(query);
     
     if(comments){
       // const modifiedcomments = comments.map(comment => {
@@ -384,7 +384,7 @@ exports.fetchPostComments = async (parsedUrl, discussion_id, user_id, res) => {
       //   return comment;
       // });
       
-      const totalCommentsCount = await prisma.discussionComments.count({where});
+      const totalCommentsCount = await prisma.discussioncomments.count({where});
       const totalPages = Math.ceil(totalCommentsCount / page_size);
       const paginatedResult = {
         comments: comments,
@@ -434,11 +434,11 @@ exports.commentReplies = async (parsedUrl, comment_id, res) => {
         }
       }
     }
-    const comments = await prisma.discussionComments.findMany(query);
+    const comments = await prisma.discussioncomments.findMany(query);
     if(comments){
       const page = queryString.page ? parseInt(queryString.page) : 1;
       const page_size = parseInt(process.env.COMMENT_PER_PAGE);
-      const totalCommentsCount = await prisma.discussionComments.count({where});
+      const totalCommentsCount = await prisma.discussioncomments.count({where});
       const totalPages = Math.ceil(totalCommentsCount / page_size);
       const paginatedResult = {
         comments: comments,
@@ -469,7 +469,7 @@ exports.commentReplies = async (parsedUrl, comment_id, res) => {
 exports.deleteComment = async (user_id, comment_id, res) => {
   try {
 
-    const deleteReplies = await prisma.discussionComments.delete({
+    const deleteReplies = await prisma.discussioncomments.delete({
       where:{
         parent:parseInt(comment_id),
       }
@@ -477,7 +477,7 @@ exports.deleteComment = async (user_id, comment_id, res) => {
 
     if(deleteReplies){
 
-    await prisma.discussionComments.delete({
+    await prisma.discussioncomments.delete({
       where:{
         id:parseInt(comment_id)
       }
@@ -514,19 +514,19 @@ exports.deletePost = async (user_id, post_id, res) => {
         error:"post not found or you are not authorized to delete this post"
       })
     }
-    const deletePostLike = await prisma.discussionLike.deleteMany({
+    const deletePostLike = await prisma.discussionlike.deleteMany({
       where:{
         discussion_id:parseInt(post_id)
       }
     });
     if(deletePostLike){
-      const deletePostComments = await prisma.discussionComments.deleteMany({
+      const deletePostComments = await prisma.discussioncomments.deleteMany({
         where:{
           discussion_id:parseInt(post_id)
         }
       });
       if(deletePostComments){
-        const deletePostTags = await prisma.tagsToDiscussions.deleteMany({
+        const deletePostTags = await prisma.tagstodiscussions.deleteMany({
           where:{
             discussion_id:parseInt(post_id)
           }
@@ -557,21 +557,21 @@ exports.deletePost = async (user_id, post_id, res) => {
 }
 
 exports.likePost = async (user_id, post_id, res) => {
-  const exisitingLike = await prisma.discussionLike.findFirst({
+  const exisitingLike = await prisma.discussionlike.findFirst({
     where:{
       discussion_id:parseInt(post_id),
       user_id:parseInt(user_id)
     }
   });
   if(exisitingLike){
-    await prisma.discussionLike.deleteMany({
+    await prisma.discussionlike.deleteMany({
       where:{
         discussion_id:parseInt(post_id),
         user_id:parseInt(user_id)
       }
     });
   }else{
-    await prisma.discussionLike.create({
+    await prisma.discussionlike.create({
       data:{
         discussion_id:parseInt(post_id),
         user_id:parseInt(user_id)
@@ -590,21 +590,21 @@ exports.likePost = async (user_id, post_id, res) => {
 exports.likeComment = async (user_id, comment_id, res) => {
   console.log(user_id, comment_id);
   
-  const exisitingLike = await prisma.commentLikes.findFirst({
+  const exisitingLike = await prismacommentlikes.findFirst({
     where:{
       comment_id:parseInt(comment_id),
       user_id:parseInt(user_id)
     }
   });
   if(exisitingLike){
-    await prisma.commentLikes.deleteMany({
+    await prismacommentlikes.deleteMany({
       where:{
         comment_id:parseInt(comment_id),
         user_id:parseInt(user_id)
       }
     });
   }else{
-    await prisma.commentLikes.create({
+    await prismacommentlikes.create({
       data:{
         comment_id:parseInt(comment_id),
         user_id:parseInt(user_id)

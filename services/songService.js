@@ -17,7 +17,7 @@ const { moveTrackFileToCloudinary, handleCloudinaryUpload, uploadToCloudinary } 
 
 exports.createAlbum = async (req, res) => {
   try {
-    await prisma.albums.create({
+    const album = await prisma.albums.create({
       data:{
         title: req.body.title,
         slug: await slugify(req.body.title),
@@ -29,7 +29,8 @@ exports.createAlbum = async (req, res) => {
 
     return res.status(200).json({
       status:"success",
-      message:"New Album Created"
+      message:"New Album Created",
+      album_id: album.id
     })
   } catch (error) {
     console.log(error);
@@ -57,7 +58,8 @@ exports.handleAlbumCover = async (req, directory, res) => {
       if(update_album.status){
         return res.status(200).json({
           status: 'success',
-          message: "Track cover photo updated"
+          message: "Track cover photo updated",
+          album_id: req.body.album_id
         });
       }else{
         return res.status(400).json({
@@ -128,6 +130,27 @@ exports.updateAlbum = async (album_id, album_data) => {
     };
   }
 };
+
+exports.getArtistAlbums = async (artiste_id, res) => {
+  try {
+    const albums = await prisma.albums.findMany({
+      where: {
+        user_id: parseInt(artiste_id)
+      }
+    });
+    return res.status(200).json({
+      status:"success",
+      data:albums
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status:"fail",
+      error:error,
+      message:"Something went wrong"
+    })
+  }
+}
 exports.create = async(song_data, user) => {
     try {
       if(typeof song_data.featured != 'object' ){
@@ -148,7 +171,7 @@ exports.create = async(song_data, user) => {
           
           genres.forEach(async (genre) => {
             
-            await prisma.trackToGenres.create({
+            await prisma.tracktogenres.create({
               data: {
                 track_id:add_song_data.id,
                 genre_id: parseInt(genre)
@@ -266,7 +289,7 @@ exports.update = async (track_id, song_data) => {
       delete song_data.genres; // Remove genres from song_data for the update
 
       // Delete existing genre associations
-      await prisma.trackToGenres.deleteMany({
+      await prisma.tracktogenres.deleteMany({
         where: {
           track_id: track_id,
         }
@@ -274,7 +297,7 @@ exports.update = async (track_id, song_data) => {
 
       // Add new genre associations
       for (const genre of genres) {
-        await prisma.trackToGenres.create({
+        await prisma.tracktogenres.create({
           data: {
             track_id: track_id,
             genre_id: parseInt(genre)
@@ -643,33 +666,33 @@ exports.genres = async (res) => {
 //   // const {user_id} = req.user.id;
 //   try {
 //     let message = "";
-//     const existingLike = await prisma.trackLike.findMany({
+//     const existingLike = await prisma.tracklike.findMany({
 //       where: { track_id, user_id },
 //     });
 
 //     if (existingLike.length > 0) {
-//        await prisma.trackLike.deleteMany({
+//        await prisma.tracklike.deleteMany({
 //         where: { track_id, user_id },
 //       });
 //       message = "unliked";
 //       // return res.status(200).json({status:"success", message: 'unliked' });
 //     }else{
-//       await prisma.trackLike.create({
+//       await prisma.tracklike.create({
 //         data: { track_id, user_id },
 //       });
     
 //       message = "liked";
-//       // return res.status(200).json({status:"success", message: 'liked', data:likedTracks });
+//       // return res.status(200).json({status:"success", message: 'liked', data:likedtracks });
 //     }
 
-//     const likedTracks = await prisma.trackLike.findMany({
+//     const likedtracks = await prisma.tracklike.findMany({
 //       where: { user_id },
 //     }).map((track) => {
 //       return {track_id: track.track_id}
 //     });
   
 
-//     return res.status(200).json({status:"success", message: message, data:likedTracks });
+//     return res.status(200).json({status:"success", message: message, data:likedtracks });
 
 //   } catch (error) {
 //     console.error(error);
@@ -685,28 +708,28 @@ exports.likeTrack = async (req_data, res) => {
   // console.log(track_id, user_id);
   
   try {
-    const existingLike = await prisma.trackLike.findFirst({
+    const existingLike = await prisma.tracklike.findFirst({
       where: { track_id:track_id, user_id:user_id },
     });
     let message ="";
     if (existingLike) {
-      await prisma.trackLike.delete({
+      await prisma.tracklike.delete({
         where: { id:existingLike.id },
       });
       message = "unliked";
     } else {
-      await prisma.trackLike.create({
+      await prisma.tracklike.create({
         data: { track_id, user_id },
       });
       message = "liked";
     }
 
-    const likedTracks = await prisma.trackLike.findMany({
+    const likedtracks = await prisma.tracklike.findMany({
       where: { user_id: user_id },
       select: { track_id:true },
     });
 
-    return res.status(200).json({ status: "success", message, data: likedTracks });
+    return res.status(200).json({ status: "success", message, data: likedtracks });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Error liking track' });
@@ -893,7 +916,7 @@ exports.playTrackBySlug = async (slug, res) => {
 
 
 exports.recordPlayback = async (user, track_id, type, res) => {
-  const recordPlay = await prisma.trackListen.create({
+  const recordPlay = await prisma.tracklisten.create({
     data: {
       user_id: user.id,
       track_id: parseInt(track_id),
@@ -914,7 +937,7 @@ exports.recordPlayback = async (user, track_id, type, res) => {
 
 exports.updatePlayDuration = async (user, track_id, play_id, duration, res) => {
 
-  const existingPlay =  await prisma.trackListen.findFirst({
+  const existingPlay =  await prisma.tracklisten.findFirst({
     where:{
         user_id:user.id,
         track_id:parseInt(track_id),
@@ -924,7 +947,7 @@ exports.updatePlayDuration = async (user, track_id, play_id, duration, res) => {
 
   })
   if(existingPlay){
-    await prisma.trackListen.update({
+    await prisma.tracklisten.update({
       where: {
         id: existingPlay.id, // Using the fetched item's ID
       },
@@ -943,7 +966,7 @@ exports.updatePlayDuration = async (user, track_id, play_id, duration, res) => {
       message: 'Playback instance not found',
     })
   }
-    // await prisma.trackListen.create({
+    // await prisma.tracklisten.create({
     //     data: {
     //       user_id: user.id,
     //       track_id: track_id,
@@ -958,7 +981,7 @@ exports.updatePlayDuration = async (user, track_id, play_id, duration, res) => {
 
 exports.updatePlayStatus = async (user, track_id, play_id, status, res) => {
 
- const existingPlay =  await prisma.trackListen.findFirst({
+ const existingPlay =  await prisma.tracklisten.findFirst({
     where:{
         user_id:user.id,
         track_id:parseInt(track_id),
@@ -967,7 +990,7 @@ exports.updatePlayStatus = async (user, track_id, play_id, status, res) => {
 
   })
   if(existingPlay){
-    await prisma.trackListen.update({
+    await prisma.tracklisten.update({
       where: {
         id: existingPlay.id, // Using the fetched item's ID
       },
@@ -1043,7 +1066,7 @@ exports.addTracksToPlayList = async (req_data, res) => {
     
     track_ids.forEach( async track_id => {
       if(!playListTrackIds.includes(track_id)){
-        await prisma.playlistTracks.create({
+        await prisma.playlisttracks.create({
           data:{
             playlist_id: playlist_id,
             track_id:track_id,
@@ -1074,7 +1097,7 @@ exports.removeTracksToPlayList = async (req_data, res) => {
       return res.status(404).json({ status: "fail", message:"Playlist not found" });
     }
     
-    await prisma.playlistTracks.deleteMany({
+    await prisma.playlisttracks.deleteMany({
       where: {
         playlist_id:playList.id,
         track_id: {
@@ -1108,7 +1131,7 @@ exports.deletePlaylist = async (id, user_id, res) => {
     }
 
     // Delete associated tracks first
-    await prisma.playlistTracks.deleteMany({
+    await prisma.playlisttracks.deleteMany({
       where: {
         playlist_id: parseInt(id),
       }
@@ -1180,7 +1203,7 @@ exports.reorderPlaylist = async (playlist_id, user_id, track_ids, res) => {
     }
     
     
-    await prisma.playlistTracks.deleteMany({
+    await prisma.playlisttracks.deleteMany({
       where: {
         playlist_id:playList.id,
         track_id: {
@@ -1190,7 +1213,7 @@ exports.reorderPlaylist = async (playlist_id, user_id, track_ids, res) => {
     });
 
     track_ids.forEach( async track_id => {
-        await prisma.playlistTracks.create({
+        await prisma.playlisttracks.create({
           data:{
             playlist_id: playlist_id,
             track_id:track_id,

@@ -16,6 +16,7 @@ songRouter.get('/genres', songController.genres);
 
 // Track Routes
 songRouter.use('/albums', albumRouter);
+    albumRouter.get('/:artist_id/list', verifyAuthToken, songController.getArtistAlbums);
     albumRouter.post('/create', verifyAuthToken, songController.createAlbum);
     albumRouter.post('/upload-cover', verifyAuthToken, uploadFile('uploads/album_covers').single('cover_photo'), validateAlbumOwnership, songController.addAlbumCoverPhoto);;
 

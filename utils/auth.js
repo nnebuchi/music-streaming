@@ -68,7 +68,7 @@ exports.addAuthToken = async (req, res, next) => {
 exports.tokenIsBlackListed = async (raw_token) => {
   // console.log(raw_token);
   
-    const blackList = await prisma.blackListToken.findMany({
+    const blackList = await prisma.blacklisttoken.findMany({
         where:{
             token:raw_token
         }

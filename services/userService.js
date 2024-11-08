@@ -67,7 +67,7 @@ exports.profile = async (user, res) => {
                 artistes:{
                     select: {artiste_id:true}
                 },
-                likedTracks:{
+                likedtracks:{
                     select: {track_id:true}
                 }
               },
@@ -138,7 +138,7 @@ exports.updateProfile = async (req, res) => {
 //             socials.forEach( async social=>{
 //                 // console.log(social.slug);
 //                 if(social.slug in request_data){
-//                     let existing_social = await prisma.userSocialProfiles.findFirst({
+//                     let existing_social = await prisma.usersocialprofiles.findFirst({
 //                         where:{
 //                             social_id:social.id,
 //                             user_id:user.id
@@ -148,7 +148,7 @@ exports.updateProfile = async (req, res) => {
                     
 //                     if(existing_social){
 //                         //  console.log(existing_social);
-//                         await prisma.userSocialProfiles.update({
+//                         await prisma.usersocialprofiles.update({
 //                             where:{
 //                                 id:existing_social.id
 //                             },
@@ -157,7 +157,7 @@ exports.updateProfile = async (req, res) => {
 //                             }
 //                         })
 //                     }else{
-//                         await prisma.userSocialProfiles.create({
+//                         await prisma.usersocialprofiles.create({
 //                             data:{
 //                                 user_id:user.id,
 //                                 social_id:social.id,
@@ -169,7 +169,7 @@ exports.updateProfile = async (req, res) => {
                 
 //             })
 
-//             await prisma.userSocialProfiles.deleteMany({
+//             await prisma.usersocialprofiles.deleteMany({
 //                 where: {
 //                   user_id: req_user.id,
 //                   url: '' 
@@ -222,7 +222,7 @@ exports.updateSocials = async (req_user, request_data, res) => {
             if (social.slug in request_data) {
                 const socialUrl = request_data[social.slug];
 
-                const existingSocialProfile = await prisma.userSocialProfiles.findFirst({
+                const existingSocialProfile = await prisma.usersocialprofiles.findFirst({
                     where: {
                         social_id: social.id,
                         user_id: user.id
@@ -231,14 +231,14 @@ exports.updateSocials = async (req_user, request_data, res) => {
 
                 if (existingSocialProfile) {
                     operations.push(
-                        prisma.userSocialProfiles.update({
+                        prisma.usersocialprofiles.update({
                             where: { id: existingSocialProfile.id },
                             data: { url: socialUrl }
                         })
                     );
                 } else {
                     operations.push(
-                        prisma.userSocialProfiles.create({
+                        prisma.usersocialprofiles.create({
                             data: {
                                 user_id: user.id,
                                 social_id: social.id,
@@ -252,7 +252,7 @@ exports.updateSocials = async (req_user, request_data, res) => {
 
         // Handle removal of empty URL profiles in the same transaction.
         operations.push(
-            prisma.userSocialProfiles.deleteMany({
+            prisma.usersocialprofiles.deleteMany({
                 where: {
                     user_id: user.id,
                     url: ''
@@ -495,7 +495,7 @@ exports.getFollowers = async (req, res) => {
     
     const {id} = req.user   
     try {
-        const followers = await prisma.artisteToFollower.findMany({
+        const followers = await prisma.artistetofollower.findMany({
             where: {
                 artiste_id: id, // ID of the artiste
             },
@@ -530,7 +530,7 @@ exports.getFollowings = async (req, res) => {
     
     const {id} = req.user   
     try {
-        const followings = await prisma.artisteToFollower.findMany({
+        const followings = await prisma.artistetofollower.findMany({
             where: {
                 follower_id: id, // ID of the artiste
             },
@@ -560,11 +560,11 @@ exports.getFollowings = async (req, res) => {
         });
     }  
 }
-exports.getLikedTracks = async (req, res) => {
+exports.getlikedtracks = async (req, res) => {
     
     const {id} = req.user   
     try {
-        const likedTracks = await prisma.trackLike.findMany({
+        const likedtracks = await prisma.tracklike.findMany({
             where: {
                 user_id: id, // ID of the artiste
             },
@@ -572,16 +572,16 @@ exports.getLikedTracks = async (req, res) => {
                 track: true, // Get only the listener details
             },
         });
-        if(likedTracks){
+        if(likedtracks){
             // const formattedFollowings = await Promise.all(
-            //     likedTracks.map(async (likedTrack) => {
+            //     likedtracks.map(async (likedTrack) => {
             //       const formattedFollowing = await excludeCast(following.artiste, creatorCast);
             //       return formattedFollowing;
             //     })
             //   );
             return res.status(200).json({
                 status: 'success',
-                data: await likedTracks,
+                data: await likedtracks,
             }); 
         }
     

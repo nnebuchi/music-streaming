@@ -3,7 +3,7 @@ const prisma  = new PrismaClient();
 
 exports.version = async(version_no, platform, res)=>{
 
-    let version_settings = await prisma.App_Settings.findUnique({
+    let version_settings = await prisma.app_settings.findUnique({
         where:{subject:"app_version"},
     });
 

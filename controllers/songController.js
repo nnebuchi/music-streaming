@@ -73,6 +73,24 @@ exports.addAlbumCoverPhoto = async (req, res) => {
     }
    
 }
+
+exports.getArtistAlbums = async (req, res) => {
+    const {artist_id} = req.params
+    const validate = await runValidation([
+        { input: { value: artist_id, field: "artist_id", type: "text" }, rules: { required: true } },
+    ])
+    if(validate){
+        if(validate?.status === false) {
+            return res.status(409).json({
+                status:"fail",
+                errors:validate.errors,
+                message:"Request Failed",
+            });
+        }else{
+            return songService.getArtistAlbums(artist_id, res)
+        }
+    }
+}
 exports.add = async (req, res) => {
     const add_track_data = await songService.create(req.body, req.user);
     if(add_track_data.status){

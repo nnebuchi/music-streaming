@@ -151,7 +151,7 @@ model tracklike {
 }
 
 
-model blacklisttoken {
+model blackListtoken {
     id Int @id @default(autoincrement())
     token   String @db.Text
     exp     Int
