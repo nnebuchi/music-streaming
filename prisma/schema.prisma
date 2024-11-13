@@ -267,8 +267,17 @@ model products {
     name        String
     price       Decimal @db.Decimal(10, 2)
     orders      orders[]
+    photos      product_photos[]
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt @default(now())
+}
+
+model product_photos {
+    id                  Int @id @default(autoincrement())
+    product_id          Int
+    file                String @db.Text
+    is_cover            Boolean @default(false)
+    product             products @relation(fields: [product_id], references: [id])
 }
 
 model orders {
@@ -289,6 +298,21 @@ model transactions {
     user_id         Int?
     user            users?  @relation(fields: [user_id], references: [id])
     order_id        Int?
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt @default(now())
+}
+
+model studio_bookings {
+    id              Int @id @default(autoincrement())
+    user_id         Int
+    email           String
+    phone           String
+    fullname        String
+    date            String
+    time            String
+    persons_count   Int
+    activities      String
+    more_details    String @db.Text
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
 }

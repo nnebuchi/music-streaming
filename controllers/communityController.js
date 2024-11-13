@@ -1,4 +1,4 @@
-const { runValidation } = require('../lib/buchi');
+const { runValidation } = require('../lib/buchi__old');
 const communityService = require('../services/communityService');
 const url = require('url');
 

@@ -1,8 +1,10 @@
 const {fileBaseUrl} = require('../utils/file');
 exports.user_middleware = async (params, next) => {
+  
+  
     const result = await next(params);
   
-    if (params.model === 'Users' && 
+    if (params.model === 'users' && 
         [
           'findUnique', 
           'findMany', 
@@ -26,11 +28,10 @@ exports.user_middleware = async (params, next) => {
 };
 
 exports.song_middleware = async (params, next) => {
-  
   try {
     const result = await next(params);
 
-    if (params.model === 'Tracks' && 
+    if (params.model === 'tracks' && 
         [
           'findUnique', 
           'findMany', 
@@ -41,6 +42,7 @@ exports.song_middleware = async (params, next) => {
     ) {
       
       if (Array.isArray(result)) {
+        
         result.forEach(async (track) => {
           try {
             track.file = await fileBaseUrl(track.file);
@@ -51,6 +53,7 @@ exports.song_middleware = async (params, next) => {
           }
         });
       } else {
+  
         try {
           result.file = await fileBaseUrl(result.file);
           result.video_file = await fileBaseUrl(result.video_file);
@@ -73,7 +76,7 @@ exports.discussionComments_middleware = async (params, next) => {
     const result = await next(params);
 
     // Check if the model is 'DiscussionComments' and the action is relevant
-    if (params.model === 'DiscussionComments' &&
+    if (params.model === 'discussioncomments' &&
         [
             'findUnique',
             'findMany',

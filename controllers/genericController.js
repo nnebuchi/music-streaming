@@ -1,5 +1,5 @@
 
-const { runValidation } = require('../lib/buchi');
+const { runValidation } = require('../lib/buchi__old');
 const genericService = require('../services/genericService');
 
 exports.version = async(req, res)=>{
@@ -29,3 +29,7 @@ exports.version = async(req, res)=>{
     
 }
 
+
+exports.storeSeeder = async(req, res) => {
+    return await genericService.storeSeeder(req, res)
+}

@@ -285,7 +285,7 @@ exports.socials = async (user, res) => {
         
         const user_socials = await prisma.socials.findMany({
             include: {
-              userSocialProfiles: {
+              usersocialprofiles: {
                 where: { user_id: user.id },
                 select: { id: true, url:true, social_id:true}, // Select only the ID from UserSocialProfiles
               },

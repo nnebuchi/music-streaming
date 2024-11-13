@@ -23,12 +23,16 @@ const userRoutes = require('./routes/userRoutes');
 const genericRoutes = require('./routes/genericRoutes');
 const songRoutes = require('./routes/songRoutes');
 const communityRoutes = require('./routes/communityRoutes');
+const studioRouter = require('./routes/studioRoutes');
+const storeRouter = require('./routes/storeRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/app', genericRoutes);
 app.use('/song', songRoutes);
-app.use('/community', communityRoutes)
+app.use('/community', communityRoutes);
+app.use('/studio', studioRouter);
+app.use('/store', storeRouter);
 
 // Error handling middleware (optional)
 // app.use((err, req, res, next) => {

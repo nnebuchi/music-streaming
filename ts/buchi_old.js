@@ -70,7 +70,7 @@ const buchi_validate = async (input: Input, constraints: Constraints, alias: str
 
         const rules = {
             required: {
-                pass: constraints?.required === true ? (input?.type != 'file' ? (input?.type !="number" ? input?.value?.length > 0:typeof input?.value === 'number') : (input?.files?.length > 0)) : true,
+                pass: constraints?.required === true ? (input?.type != 'file' ? (input?.value?.length > 0) : (input?.files?.length > 0)) : true,
                 message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " is required" : alias + " is required"
             },
             min_length: {

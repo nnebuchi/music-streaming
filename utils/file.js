@@ -36,8 +36,6 @@ exports.extractDynamicPart = async (filePath) => {
 }
 
 exports.fileBaseUrl = async (filePath) => {
-  console.log("dfnsdfknsdk");
-  
   if(!filePath){
     return null;
   }
