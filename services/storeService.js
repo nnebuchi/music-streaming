@@ -1,4 +1,5 @@
 const prisma = require("../prisma/client");
+const { generateOTP } = require("../utils/generic");
 
 exports.getProducts = async (parsedUrl, res) => {
     try {
@@ -53,3 +54,54 @@ exports.getProducts = async (parsedUrl, res) => {
     }
    
 };
+
+exports.generateOrder = async (req, res) => { 
+    try {
+        const code = await generateOTP();
+        const order = await prisma.orders.create({
+            data: {
+                user_id: req.user.id,
+                code:code.toString(),
+                amount: req.body.amount
+            }
+        });
+
+        if(order){
+            await prisma.order_products.createMany({
+                data: req.body.product_ids.map((product) => {
+                    return {
+                        order_id: order.id,
+                        product_id: product                   }
+                })
+            })
+        }
+
+        const fullOrder = await prisma.orders.findUnique({
+            where: { id: order.id },
+            include: {
+                order_products: {
+                    include:{
+                        product:true
+                    }
+                }, // Include the related order_products
+                user: true             // Optionally include the user details
+            }
+        });
+        
+
+        return res.status(200).json({
+            status: "success",
+            message: "order created",
+            order: fullOrder   
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(200).json({
+            status: "fail",
+            message: "order created",
+            error: error   
+        });
+        
+    }
+}

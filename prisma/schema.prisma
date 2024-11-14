@@ -263,13 +263,13 @@ model commentlikes {
 }
 
 model products {
-    id          Int    @id @default(autoincrement())
-    name        String
-    price       Decimal @db.Decimal(10, 2)
-    orders      orders[]
-    photos      product_photos[]
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt @default(now())
+    id              Int    @id @default(autoincrement())
+    name            String
+    price           Decimal @db.Decimal(10, 2)
+    order           order_products[]
+    photos          product_photos[]
+    created_at      DateTime @default(now())
+    updated_at  DateTime @updatedAt @default(now())
 }
 
 model product_photos {
@@ -282,12 +282,22 @@ model product_photos {
 
 model orders {
     id              Int    @id @default(autoincrement())
-    product_id      Int
     user_id         Int
-    product         products @relation(fields: [product_id], references: [id])
+    code            String
+    status          String?
+    amount          Decimal @db.Decimal(10, 2) @default(0.00)
     user            users  @relation(fields: [user_id], references: [id])
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt @default(now())
+    products  order_products[]
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt @default(now())
+}
+
+model order_products {
+    id              Int @id @default(autoincrement())
+    product_id      Int
+    order_id        Int
+    product         products  @relation(fields: [product_id], references: [id])
+    order           orders  @relation(fields: [order_id], references: [id])
 }
 
 model transactions {

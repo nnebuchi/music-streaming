@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `orders` ADD COLUMN `amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    ADD COLUMN `status` VARCHAR(191) NULL;
