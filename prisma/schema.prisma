@@ -266,8 +266,8 @@ model products {
     id              Int    @id @default(autoincrement())
     name            String
     price           Decimal @db.Decimal(10, 2)
-    category_id     Int?
-    // category        product_categories @relation(fields: [category_id], references: [id])
+    category_id     Int
+    category        product_categories @relation(fields: [category_id], references: [id])
     order           order_products[]
     product_photos  product_photos[]
     created_at      DateTime @default(now())
@@ -278,7 +278,7 @@ model product_categories {
     id          Int @id @default(autoincrement())
     slug        String
     name        String
-    // products    products[]   
+    products    products[]   
 }
 
 model product_photos {
