@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { product_photos } = require('../prisma/client');
 const prisma  = new PrismaClient();
 
 exports.version = async(version_no, platform, res)=>{
@@ -37,80 +38,68 @@ exports.version = async(version_no, platform, res)=>{
 }
 
 exports.storeSeeder = async (req, res) => {
-    const createProducts = await prisma.products.createMany({
-        data:[
-            { name:"Men Polo", price:23000.00}, 
-            { name:"Beat Headset", price:120000.00}, 
-            { name:"Airpod 4.3", price:40000.00}
-        ]
-    });
+    try {
+        // Step 1: Delete existing data
+        await prisma.product_photos.deleteMany({});
+        await prisma.order_products.deleteMany({});
+        await prisma.orders.deleteMany({});
+        await prisma.products.deleteMany({});
 
-    if(createProducts){
+        // Step 2: Seed products
+        const productData = [
+            { name: "Men Polo", price: 23000.0, category_id: 3 },
+            { name: "Beat Headset", price: 120000.0, category_id: 1 },
+            { name: "Airpod 4.3", price: 40000.0, category_id: 1 },
+        ];
+
+        const createProducts = await prisma.products.createMany({ data: productData });
+
+        if (!createProducts) {
+            return res.status(500).json({ status: "error", message: "Failed to create products" });
+        }
+
+        // Step 3: Retrieve newly created products
         const products = await prisma.products.findMany();
-        products.forEach(async (product, index) => {
-            let data;
-            
-            if(product.name === "Men Polo"){
-                data = [
-                    {
-                        file:"uploads/shop/shirt.jpg",
-                        product_id:product.id,
-                        is_cover:true
-                    },
-                    {
-                        file:"uploads/shop/shirt2.jpg",
-                        product_id:product.id,
-                    },
 
-                ]
-                
-            }else if(product.name === "Beat Headset"){
-                data = [
-                    {
-                        file:"uploads/shop/headset.jpg",
-                        product_id:product.id,
-                        is_cover:true
-                    }
-
-                ]
-            }else if(product.name === "Airpod 4.3"){
-                data = [
-                    {
-                        file:"uploads/shop/airpod.png",
-                        product_id:product.id,
-                        is_cover:true
-                    },
-                    {
-                        file:"uploads/shop/airpod2.jpeg",
-                        product_id:product.id,
-                    },
-                    {
-                        file:"uploads/shop/airpod3.jpeg",
-                        product_id:product.id,
-                    },
-                    {
-                        file:"uploads/shop/airpod4.jpeg",
-                        product_id:product.id,
-                    },
-                ]
-            }
-            await prisma.product_photos.createMany({
-                data:data
-            });
-
-            if(index ==(product.length -1)){
-                return res.status(200).json(
-                    {
-                        status:"success",
-                        message: "Store Seeder completed!"
-                    }
-                )
+        // Step 4: Prepare and seed product photos
+        const photoData = products.flatMap((product) => {
+            switch (product.name) {
+                case "Men Polo":
+                    return [
+                        { file: "uploads/shop/shirt.jpg", product_id: product.id, is_cover: true },
+                        { file: "uploads/shop/shirt2.jpg", product_id: product.id },
+                    ];
+                case "Beat Headset":
+                    return [
+                        { file: "uploads/shop/headset.jpg", product_id: product.id, is_cover: true },
+                    ];
+                case "Airpod 4.3":
+                    return [
+                        { file: "uploads/shop/airpod.png", product_id: product.id, is_cover: true },
+                        { file: "uploads/shop/airpod2.jpeg", product_id: product.id },
+                        { file: "uploads/shop/airpod3.jpeg", product_id: product.id },
+                        { file: "uploads/shop/airpod4.jpeg", product_id: product.id },
+                    ];
+                default:
+                    return [];
             }
         });
-        
-        
+
+        await prisma.product_photos.createMany({ data: photoData });
+
+        // Step 5: Respond with success
+        return res.status(200).json({
+            status: "success",
+            message: "Store Seeder completed!",
+        });
+    } catch (error) {
+        console.error("Error during storeSeeder:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "An error occurred during the seeding process",
+            error: error.message,
+        });
     }
+};
 
-
-}
 

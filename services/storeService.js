@@ -14,7 +14,7 @@ exports.getProducts = async (parsedUrl, res) => {
         query.skip = (page - 1) * page_size;
         query.take = page_size;
         query.include = {
-            photos: {
+            product_photos: {
               select: {
                 id: true,
                 file: true,
