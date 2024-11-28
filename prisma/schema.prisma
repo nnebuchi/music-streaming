@@ -294,9 +294,8 @@ model orders {
     user_id         Int
     code            String
     status          String?
-    amount          Decimal @db.Decimal(10, 2) @default(0.00)
     user            users  @relation(fields: [user_id], references: [id])
-    products        order_products[]
+    order_products  order_products[]
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
 }
@@ -306,6 +305,7 @@ model order_products {
     product_id      Int
     order_id        Int
     quantity        Int @default(1)
+    amount          Decimal @db.Decimal(10, 2)
     product         products  @relation(fields: [product_id], references: [id])
     order           orders  @relation(fields: [order_id], references: [id])
 }

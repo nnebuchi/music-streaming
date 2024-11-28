@@ -231,7 +231,7 @@ exports.likeTrack = async (req, res) => {
 exports.playTrack = async (req, res) => {
     const {track_id} = req.params
     const parsedUrl = url.parse(req.url, true);
-    return songService.playTrack({id:track_id}, parsedUrl, req.user, res)
+    return songService.playTrack(track_id, parsedUrl, req.user, res)
 }
 
 exports.playTrackBySlug = async (req, res) => {

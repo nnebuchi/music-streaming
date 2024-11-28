@@ -8,8 +8,15 @@ exports.getProducts = async (parsedUrl, res) => {
         if (queryString.latest && queryString.latest === 'true') {
             query.orderBy = { id: 'desc' };
         }
+
+        if (queryString.category_id && queryString.category_id != 'all') {
+            query.where = {
+                category_id: parseInt(queryString.category_id)
+            }
+        }
+       
         const page = queryString.page ? parseInt(queryString.page) : 1;
-        const page_size = parseInt(process.env.TRACK_PER_PAGE);
+        const page_size = parseInt(process.env.PRODUCT_PER_PAGE);
 
         query.skip = (page - 1) * page_size;
         query.take = page_size;
@@ -57,22 +64,33 @@ exports.getProducts = async (parsedUrl, res) => {
 
 exports.generateOrder = async (req, res) => { 
     try {
-        const code = await generateOTP();
+        const code = await generateOTP()
+        
         const order = await prisma.orders.create({
             data: {
                 user_id: req.user.id,
                 code:code.toString(),
-                amount: req.body.amount
+                status:"processing"
             }
         });
 
+        const data = await Promise.all(req.body.products.map(async (product) => {
+                   
+            return {
+                order_id: order.id,
+                product_id: parseInt(product.id),
+                quantity:   parseInt(product.quantity),
+                amount: await prisma.products.findUnique({
+                    where: { id: parseInt(product.id) }
+                }).then((item) => {
+                    return item.price * product.quantity
+                })
+            }
+        }))
+
         if(order){
             await prisma.order_products.createMany({
-                data: req.body.product_ids.map((product) => {
-                    return {
-                        order_id: order.id,
-                        product_id: product                   }
-                })
+                data: data
             })
         }
 
@@ -99,9 +117,40 @@ exports.generateOrder = async (req, res) => {
         console.log(error);
         return res.status(200).json({
             status: "fail",
-            message: "order created",
+            message: "order not created",
             error: error   
         });
         
     }
 }
+
+
+exports.getProductCategories = async (res) => {
+    const product_categories = await prisma.product_categories.findMany({});
+    return res.status(200).json({ 
+        status:"success",
+        data:product_categories
+    });
+}
+
+// exports.getProductsByCategory = async (req, res) => {
+//     const queryString = req.query;
+//     const query = {};
+//     query.include = {
+//         product_photos: {
+//           select: {
+//             id: true,
+//             file: true,
+//             is_cover: true,
+//           },
+//         },
+//       };
+//     query.where = {
+//         category_id: queryString.category_id
+//     }
+//     const product_categories = await prisma.product_categories.findMany({});
+//     return res.status(200).json({ 
+//         status:"success",
+//         data:product_categories
+//     });
+// }

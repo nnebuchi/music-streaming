@@ -867,6 +867,7 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
 
 
 exports.playTrack = async (trackId, parsedUrl, user, res) => {
+console.log(trackId);
 
   
   const queryString = parsedUrl.query;

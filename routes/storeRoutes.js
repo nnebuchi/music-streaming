@@ -5,5 +5,7 @@ const {verifyAuthToken} = require('../utils/auth');
 
 storeRouter.get('/products', storeController.getProducts);
 storeRouter.post('/order/generate', verifyAuthToken, storeController.generateOrder);
+storeRouter.get('/categories', storeController.getProductCategories);
+
 
 module.exports = storeRouter;

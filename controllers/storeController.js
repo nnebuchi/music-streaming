@@ -11,13 +11,9 @@ exports.getProducts = async (req, res) => {
 exports.generateOrder = async (req, res) => {
     const validate = await runValidation([
         {
-            input: { value: req.body.product_ids, field: "product_ids", type: "array" },
+            input: { value: req.body.products, field: "products", type: "array" },
             rules: { required: true },
-        },
-        {
-            input: { value: req.body.amount, field: "amount", type: "number" },
-            rules: { required: true },
-        },
+        }
     ]);
 
     if (validate?.status === false) {
@@ -29,3 +25,7 @@ exports.generateOrder = async (req, res) => {
     }
     return storeService.generateOrder(req, res);
 };
+
+exports.getProductCategories = async (req, res) => {
+    return storeService.getProductCategories(res);
+}
