@@ -3,6 +3,19 @@ const { product_photos } = require('../prisma/client');
 const prisma  = new PrismaClient();
 
 exports.version = async(version_no, platform, res)=>{
+    // const settings = {
+    //     ios: {
+    //         min_supported_version: 1,
+    //         latest_version: 1,
+    //         update_url: ""
+    //     },
+    //     android: {
+    //         min_supported_version: 1,
+    //         latest_version: 1,
+    //         update_url: ""
+    //     }
+    // }
+
 
     let version_settings = await prisma.app_settings.findUnique({
         where:{subject:"app_version"},

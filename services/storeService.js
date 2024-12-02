@@ -75,7 +75,7 @@ exports.generateOrder = async (req, res) => {
         });
 
         const data = await Promise.all(req.body.products.map(async (product) => {
-                   
+         
             return {
                 order_id: order.id,
                 product_id: parseInt(product.id),
@@ -105,12 +105,17 @@ exports.generateOrder = async (req, res) => {
                 user: true             // Optionally include the user details
             }
         });
+
+        const payment_details =  await prisma.app_settings.findUnique({
+            where:{subject:"marketplace"},
+        }); 
         
 
         return res.status(200).json({
             status: "success",
             message: "order created",
-            order: fullOrder   
+            order: fullOrder ,
+            bank:JSON.parse(payment_details.data) 
         });
     }
     catch (error) {
@@ -119,8 +124,7 @@ exports.generateOrder = async (req, res) => {
             status: "fail",
             message: "order not created",
             error: error   
-        });
-        
+        });  
     }
 }
 

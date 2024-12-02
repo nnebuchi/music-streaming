@@ -738,61 +738,79 @@ exports.likeTrack = async (req_data, res) => {
 
 exports.tracksList = async (options, user, selected_track_id, res) => {
   try {
-    // Construct filters
-    const where = {
-      approved: true,
-      id: {
-        not: parseInt(selected_track_id),
-      },
-    };
+    let whereClauses = [];
+    let queryParams = [];
 
     if (options.creator_id) {
-      where.user_id = parseInt(options.creator_id);
+      whereClauses.push(`tracks.user_id = ?`);
+      queryParams.push(parseInt(options.creator_id));
     }
 
-    if (options.genre && options.genre !== 'all') {
-      where.id = {
-        in: await prisma.trackToGenres.findMany({
-          where: { genre_id: parseInt(options.genre) },
-          select: { track_id: true },
-        }).then((res) => res.map((row) => row.track_id)),
-      };
+    if (options.genre & options.genre!='all') {
+      whereClauses.push(`
+        tracks.id IN (
+          SELECT track_id FROM TrackToGenres WHERE genre_id = ?
+        )
+      `);
+      queryParams.push(parseInt(options.genre));
     }
 
-    if (options.like && user) {
-      where.id = {
-        in: await prisma.trackLike.findMany({
-          where: { user_id: user.id },
-          select: { track_id: true },
-        }).then((res) => res.map((row) => row.track_id)),
-      };
-    }
-
-    // Use Prisma's findMany to get the tracks
-    const tracks = await prisma.tracks.findMany({
-      where,
-      include: {
-        artiste: {
-          select: {
-            id: true,
-            first_name: true,
-            last_name: true,
-            email: true,
-            profile_photo: true,
+    if (options.like) {
+      if (user) {
+        whereClauses.push(`
+          tracks.id IN (
+            SELECT track_id FROM TrackLike WHERE user_id = ?
+          )
+        `);
+        queryParams.push(user.id);
+      } else {
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            tracks: [],
+            meta: {
+              total: 0,
+              page: 1,
+              last_page: 1,
+              page_size: 10,
+              nextPage: null,
+            },
           },
-        },
-      },
-      orderBy: options.latest
-        ? { created_at: 'desc' }
-        : { id: 'asc' }, // For randomization, consider adding custom order logic
-      take: 50,
-    });
+        });
+      }
+    }
 
-    const totalTracksCount = await prisma.tracks.count({
-      where,
-    });
+    // Exclude selected track
+    whereClauses.push(`tracks.id != ?`);
+    whereClauses.push(`tracks.approved = 1`);
+    queryParams.push(parseInt(selected_track_id));
+    let whereQuery = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Format response
+    // Randomize results if options.latest is falsy, otherwise order by creation date
+    let orderByClause = options.latest ? `ORDER BY tracks.created_at DESC` : `ORDER BY RAND()`;
+
+    // Raw SQL query to fetch tracks and related artiste data
+    const tracks = await prisma.$queryRawUnsafe(`
+      SELECT tracks.*, 
+        users.id as artiste_id, 
+        users.first_name, 
+        users.last_name, 
+        users.email, 
+        users.profile_photo
+      FROM tracks 
+      JOIN users ON tracks.user_id = users.id
+      ${whereQuery}
+      ${orderByClause}
+      LIMIT 50;
+    `, ...queryParams);
+
+    const totalTracksCount = await prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count
+      FROM tracks
+      ${whereQuery};
+    `, ...queryParams);
+
+    // Transform tracks data into desired format
     const formattedTracks = tracks.map((track) => ({
       id: track.id,
       title: track.title,
@@ -808,18 +826,19 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
       created_at: track.created_at,
       updated_at: track.updated_at,
       artiste: {
-        id: track.artiste.id,
-        first_name: track.artiste.first_name,
-        last_name: track.artiste.last_name,
-        email: track.artiste.email,
-        profile_photo: track.artiste.profile_photo,
+        id: track.artiste_id,
+        first_name: track.first_name,
+        last_name: track.last_name,
+        email: track.email,
+        profile_photo: track.profile_photo,
       },
     }));
 
     const paginatedResult = {
       tracks: formattedTracks,
       meta: {
-        total: totalTracksCount + 1, // Adding 1 for the excluded track
+        // Convert BigInt to a regular number
+        total: Number(totalTracksCount[0].count) + 1, // Adding 1 for the excluded track
         page: 1,
         last_page: 1,
         page_size: 10,
@@ -831,16 +850,16 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
       status: 'success',
       data: paginatedResult,
     });
+
   } catch (error) {
     console.log(error);
     return res.status(400).json({
       status: 'fail',
-      error,
+      error: error,
       message: 'Could not fetch tracks.',
     });
   }
 };
-
 
 
 

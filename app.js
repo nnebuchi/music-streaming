@@ -10,7 +10,7 @@ const app = express();
 const port = process.env.PORT;
 
 // CORS middleware
-app.use(cors({ origin: ['http://192.168.0.6:5173', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://192.168.0.6:5173'] }));
+app.use(cors({ origin: ['https://music.graciousheartsmusic.com', 'http://localhost:5173', 'http://127.0.0.1:5173'] }));
 
 app.use(bodyParser.json());
 

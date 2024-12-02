@@ -105,6 +105,7 @@ model tracks{
     release_date    String?
     featured        String?
     about           String? @db.Text
+    approved        Boolean @default(false)      
     genres          tracktogenres[]
     likes           tracklike[]
     listens         tracklisten[]
