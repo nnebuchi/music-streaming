@@ -28,10 +28,12 @@ songRouter.use('/tracks', trackRouter);
     trackRouter.post('/upload-cover', verifyAuthToken, uploadFile('uploads/track_covers').single('cover_photo'), validateTrackOwnership, songController.addTrackCoverPhoto);
     trackRouter.post('/:track_id/like', verifyAuthToken, songController.likeTrack);
     trackRouter.get('/:track_id/play', verifyAuthToken, songController.playTrack);
+    trackRouter.get('/trending', addAuthToken, songController.trendingTracks);
     trackRouter.get('/:slug', verifyAuthToken, songController.playTrackBySlug);
     trackRouter.post('/record-playback', verifyAuthToken, songController.recordPlayback);
     trackRouter.post('/pause-or-play', verifyAuthToken, songController.updatePlayStatus);
     trackRouter.post('/update-playback-duration', verifyAuthToken, songController.updatePlayDuration);
+    
 
     // Artise Routes
 songRouter.use('/creators', artisteRouter);

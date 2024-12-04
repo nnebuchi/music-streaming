@@ -40,3 +40,11 @@ exports.validateAlbumOwnership = async (req, res, next) => {
     })
   }
 }
+
+exports.removeTrackLinks = async (tracks) => {
+  const sanitizedTracks = tracks.map(track => {
+    const { file, video_file, ...rest } = track; // Exclude the 'file' property
+    return rest;
+  });
+  return sanitizedTracks;
+}

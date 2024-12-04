@@ -62,6 +62,7 @@ model socials {
     title               String @unique
     logo                String @db.Text
     slug                String @unique
+    status              Boolean @default(true)
     usersocialprofiles  usersocialprofiles[]
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
@@ -131,7 +132,7 @@ model tracktogenres {
 
 model artistetofollower {
     id          Int    @id @default(autoincrement())
-    
+
     // Reference to the artiste (a user)
     artiste     users  @relation("ArtisteFollowers", fields: [artiste_id], references: [id])
     artiste_id  Int

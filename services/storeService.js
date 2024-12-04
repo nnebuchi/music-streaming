@@ -137,24 +137,3 @@ exports.getProductCategories = async (res) => {
     });
 }
 
-// exports.getProductsByCategory = async (req, res) => {
-//     const queryString = req.query;
-//     const query = {};
-//     query.include = {
-//         product_photos: {
-//           select: {
-//             id: true,
-//             file: true,
-//             is_cover: true,
-//           },
-//         },
-//       };
-//     query.where = {
-//         category_id: queryString.category_id
-//     }
-//     const product_categories = await prisma.product_categories.findMany({});
-//     return res.status(200).json({ 
-//         status:"success",
-//         data:product_categories
-//     });
-// }

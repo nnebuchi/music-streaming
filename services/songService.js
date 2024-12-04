@@ -9,11 +9,12 @@ const file_disks = file_config.storage;
 const fs = require('fs-extra');
 const {creatorCast} = require('../utils/auth');
 const { excludeCast} = require('../utils/generic');
-const {songCast} = require('../utils/songs')
+const {songCast, removeTrackLinks} = require('../utils/songs')
 const {removeDiskPath} = require('../utils/file');
 const {slugify} = require('../utils/generic');
 const { stat } = require('fs');
 const { moveTrackFileToCloudinary, handleCloudinaryUpload, uploadToCloudinary } = require('./fileService');
+const { log } = require('console');
 
 exports.createAlbum = async (req, res) => {
   try {
@@ -565,10 +566,11 @@ exports.list = async (parsedUrl, user, res) => {
 
       const tracks = await prisma.tracks.findMany(query);
       if (tracks) {
-        const sanitizedTracks = tracks.map(track => {
-          const { file, ...rest } = track; // Exclude the 'file' property
-          return rest;
-        });
+        const sanitizedTracks = removeTrackLinks(tracks)
+        // tracks.map(track => {
+        //   const { file, video_file, ...rest } = track; // Exclude the 'file' property
+        //   return rest;
+        // });
         const totalTracksCount = await prisma.tracks.count({ where });
         const totalPages = Math.ceil(totalTracksCount / page_size);
         const paginatedResult = {
@@ -1212,7 +1214,149 @@ exports.reorderPlaylist = async (playlist_id, user_id, track_ids, res) => {
   
 }
 
+exports.trendingTracks = async (req, res) => {
+  try {
+    const page_size = parseInt(process.env.TRACK_PER_PAGE);
+    const page = parseInt(req.query.page) || 1;
 
+    const query = {
+      skip: (page - 1) * page_size,
+      take: page_size,
+      orderBy: {
+        listens: {
+          _count: 'desc',
+        },
+      },
+      where: {
+        approved:true,
+        listens: {
+          some: {
+            created_at: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        },
+      },
+    };
+
+    const tracks = await prisma.tracks.findMany({
+      ...query
+    });
+
+// ... rest of your pagination logic
+
+    if (tracks) {
+      const sanitizedTracks = req.user ? tracks : await removeTrackLinks(tracks)
+      const totalTracksCount = await prisma.tracks.count({ where: query.where });
+      const totalPages = Math.ceil(totalTracksCount / page_size);
+
+      const paginatedResult = {
+        tracks: sanitizedTracks,
+        meta: {
+          total: totalTracksCount,
+          page,
+          last_page: totalPages,
+          page_size,
+          nextPage: page === totalPages ? null : page + 1,
+        },
+      };
+
+      return res.status(200).json({
+        status: 'success',
+        data: paginatedResult,
+      });
+    } else {
+      return res.status(404).json({
+        status: 'error',
+        message: 'No trending tracks found',
+      });
+    }
+  } catch (error) {
+    log(error);
+    return  res.status(400).json({
+      status:"fail",
+      error: error,
+      message: "Something went wrong"
+    })
+  }
+  
+}
+
+
+exports.topArtistes = async (res) => {
+  try {
+    const trendingArtistes = await prisma.tracks.findMany({
+      where: {
+        listens: {
+          some: {
+            created_at: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        },
+      },
+      groupBy: {
+        user_id: true,
+      },
+      _count: {
+        user_id: true,
+      },
+      orderBy: {
+        _count: {
+          _all: 'desc',
+        },
+      },
+      take: 15, // Adjust to the desired number of trending artistes
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            profile_photo: true,
+            is_artise: true,
+            include: {
+              socialProfiles: {
+                select: {
+                  id: true,
+                  url: true,
+                  social: {
+                    select: {
+                      title: true,
+                      logo: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
+              _count: {
+                select: {
+                  followers: true, // Counting the followers
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if(trendingArtistes){
+      return res.status(200).json({
+        status:"success",
+        data:trendingArtistes
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({
+      status:"fail",
+      error:error,
+      message:"Something went wrong"
+    });
+  }
+  
+  
+}
 
 // exports.deletePlaylist = async (user_id, playlist_id) => {
 //   const delete_list = await prisma.playlists.delete({
