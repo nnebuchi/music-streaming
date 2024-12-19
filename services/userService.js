@@ -312,36 +312,129 @@ exports.socials = async (user, res) => {
     
 }
 
-exports.deleteAccount = async (user, res) => {
-    try {
-        const user_db_data = await prisma.users.findUnique({
-            where: {email: user.email}
+exports.deleteAccount = async (req, res) => {
+    const now = new Date();
+
+    try {;
+        const user = req.user;
+        console.log(user);
+        
+        const { password } = req.body;
+        const user_db_data = await prisma.users.findFirst({
+            where: {email: user.email, deleted_at: null},
+            select: { password: true },
         })
 
-        if(user_db_data) {
-           await prisma.users.delete({
-                where: {email: user.email}
-              });
-
-              return res.status(200).json({ 
-                status: 'success',
-                error: "Account Deleted"
-            });
-        }else{
-            return res.status(404).json({ 
+        if(!user_db_data) {
+            return res.status(400).json({ 
                 status: 'fail',
                 error: "User not found"
             });
         }
         
+        const passwordCheck = await argon2.verify(user_db_data.password, password);
+        // console.log(passwordCheck);
+        
+        
+        if(!passwordCheck) {
+            return res.status(400).json({ 
+                status: 'fail',
+                error: "password is incorrect"
+            });
+        }
+        
+        // Start a transaction
+        await prisma.$transaction(async (tx) => {
+            // Delete from tables with no dependencies first
+            await tx.commentlikes.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.tracklike.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.tracklisten.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.discussionlike.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.playlistsubscribers.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.artistetofollower.updateMany({
+                where: {
+                    OR: [{ artiste_id: user.id }, { follower_id: user.id }],
+                },
+                data: { deleted_at: now },
+            });
 
+            // Delete from tables with dependencies next
+            await tx.discussioncomments.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.discussions.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.orders.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.transactions.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.studio_bookings.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+
+            // Handle playlist tracks and playlists
+            await tx.playlisttracks.deleteMany({
+                where: {
+                    playlist: { owner_id: user.id },
+                },
+            });
+            await tx.playlists.updateMany({ where: { owner_id: user.id }, data: { deleted_at: now } });
+
+            // Handle tracks and albums
+            await tx.tracks.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+            await tx.albums.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+
+            // Delete social profiles
+            await tx.usersocialprofiles.updateMany({ where: { user_id: user.id }, data: { deleted_at: now } });
+
+            // Finally, soft delete the user
+            await tx.users.update({ where: { id: user.id }, data: { deleted_at: now } });
+        });
+
+        console.log(`User with ID ${user.id} and all related instances have been deleted.`);
+        return res.status(200).json({ 
+            status: 'success',
+            message: "Account Deleted"
+        });
     } catch (error) {
+        console.error(`Error during delete: ${error}`);
         return res.status(400).json({ 
             status: 'fail',
-            error: error
+            error: error?.message
         });
+    } finally {
+        await prisma.$disconnect();
     }
-}
+};
+
+
+
+
+// exports.deleteAccount = async (user, res) => {
+//     try {
+//         const user_db_data = await prisma.users.findUnique({
+//             where: {email: user.email}
+//         })
+
+//         if(user_db_data) {
+//            await prisma.users.delete({
+//                 where: {email: user.email}
+//               });
+
+//               return res.status(200).json({ 
+//                 status: 'success',
+//                 error: "Account Deleted"
+//             });
+//         }else{
+//             return res.status(404).json({ 
+//                 status: 'fail',
+//                 error: "User not found"
+//             });
+//         }
+        
+
+//     } catch (error) {
+//         return res.status(400).json({ 
+//             status: 'fail',
+//             error: error
+//         });
+//     }
+// }
+
+
 
 // exports.updateProfilePhoto = async (user, file, res) => {
 //     const file_path_on_db = await processPath(file);

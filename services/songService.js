@@ -754,7 +754,7 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
 
     if (options.genre && options.genre !== 'all') {
       where.id = {
-        in: await prisma.trackToGenres.findMany({
+        in: await prisma.tracktogenres.findMany({
           where: { genre_id: parseInt(options.genre) },
           select: { track_id: true },
         }).then((res) => res.map((row) => row.track_id)),
@@ -763,7 +763,7 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
 
     if (options.like && user) {
       where.id = {
-        in: await prisma.trackLike.findMany({
+        in: await prisma.tracklike.findMany({
           where: { user_id: user.id },
           select: { track_id: true },
         }).then((res) => res.map((row) => row.track_id)),

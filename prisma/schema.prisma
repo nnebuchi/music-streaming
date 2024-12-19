@@ -10,7 +10,7 @@ generator client {
 model users {
     //id         String   @id @map("_id") @default(auto()) @db.ObjectId
     id                  Int     @id @default(autoincrement())
-    email               String   @unique
+    email               String?
     first_name          String
     last_name           String
     about               String? @db.Text
@@ -37,6 +37,8 @@ model users {
     transactions        transactions[]
     playlists           playlists[]   @relation("UserPlaylists")    // One-to-many relationship with playlists
     subscribedPlaylists playlistsubscribers[] // Many-to-many for subscribed playlists
+    deleted_at          DateTime?
+    @@unique([email, deleted_at])
     
 }
 
@@ -69,12 +71,13 @@ model socials {
 }
 
 model usersocialprofiles {
-    id        Int     @id @default(autoincrement())
-    url       String
-    user_id   Int
-    social_id Int
-    user      users   @relation(fields: [user_id], references: [id])
-    social    socials @relation(fields: [social_id], references: [id])
+    id          Int     @id @default(autoincrement())
+    url         String
+    user_id     Int
+    social_id   Int
+    user        users   @relation(fields: [user_id], references: [id])
+    social      socials @relation(fields: [social_id], references: [id])
+    deleted_at  DateTime?
 }
 
 
@@ -88,6 +91,7 @@ model albums{
     release_date    Int ?
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
     tracks          tracks[]
 }
 
@@ -113,6 +117,7 @@ model tracks{
     playlists       playlisttracks[]     // Many-to-many relation with playlists
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
 }
 
 model genres {
@@ -142,6 +147,7 @@ model artistetofollower {
     follower_id Int
 
     created_at  DateTime @default(now())
+    deleted_at      DateTime?
 } 
 
 model tracklike {
@@ -150,6 +156,7 @@ model tracklike {
     user_id     Int
     track       tracks @relation(fields: [track_id], references: [id])
     user        users  @relation(fields: [user_id], references: [id])
+    deleted_at  DateTime?
 }
 
 
@@ -171,6 +178,7 @@ model tracklisten {
     user        users  @relation(fields: [user_id], references: [id])
     created_at  DateTime @default(now())
     updated_at  DateTime    @updatedAt @default(now())
+    deleted_at  DateTime?
 }
 
 model playlists {
@@ -184,6 +192,7 @@ model playlists {
     subscribers     playlistsubscribers[]// Many-to-many for users subscribing to playlist
     created_at      DateTime             @default(now())
     updated_at      DateTime             @updatedAt @default(now())
+    deleted_at      DateTime?
 }
 
 model playlisttracks {
@@ -198,6 +207,7 @@ model playlistsubscribers {
     id              Int                  @id @default(autoincrement())
     playlist_id     Int
     user_id         Int
+    deleted_at      DateTime?
     playlist        playlists @relation(fields: [playlist_id], references: [id])
     user            users     @relation(fields: [user_id], references: [id])
 }
@@ -217,6 +227,7 @@ model discussions {
     body        String @db.Text
     created_at  DateTime @default(now())
     updated_at  DateTime    @updatedAt @default(now())
+    deleted_at  DateTime?
     tags        tagstodiscussions[]
     likes       discussionlike[]
     comments    discussioncomments[]
@@ -238,6 +249,7 @@ model discussionlike {
     user_id         Int
     discussion      discussions @relation(fields: [discussion_id], references: [id])
     user            users  @relation(fields: [user_id], references: [id])
+    deleted_at      DateTime?
 }
 
 model discussioncomments {
@@ -253,6 +265,7 @@ model discussioncomments {
     replies         discussioncomments[] @relation("CommentToReplies")
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
 
 }
 
@@ -262,6 +275,7 @@ model commentlikes {
     user_id      Int
     comment      discussioncomments @relation(fields: [comment_id], references: [id])
     user         users  @relation(fields: [user_id], references: [id])
+    deleted_at      DateTime?
 }
 
 model products {
@@ -300,6 +314,7 @@ model orders {
     order_products  order_products[]
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
 }
 
 model order_products {
@@ -322,6 +337,7 @@ model transactions {
     order_id        Int?
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
 }
 
 model studio_bookings {
@@ -337,4 +353,31 @@ model studio_bookings {
     more_details    String @db.Text
     created_at      DateTime @default(now())
     updated_at      DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
+}
+
+model admins {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String    @unique
+  email_verified_at DateTime?
+  password          String
+  rememberToken     String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}
+
+model personal_access_tokens {
+  id                Int       @id @default(autoincrement())
+  tokenable_type    String
+  tokenable_id      Int
+  name              String
+  token             String    @unique @db.VarChar(64)
+  abilities         String?   @db.Text
+  last_used_at      DateTime?
+  expires_at        DateTime?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@index([tokenable_type, tokenable_id]) // Index for morphs
 }

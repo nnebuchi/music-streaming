@@ -60,9 +60,11 @@ exports.storeSeeder = async (req, res) => {
 
         // Step 2: Seed products
         const productData = [
-            { name: "Men Polo", price: 23000.0, category_id: 3 },
-            { name: "Beat Headset", price: 120000.0, category_id: 1 },
-            { name: "Airpod 4.3", price: 40000.0, category_id: 1 },
+            { name: "Tote Bag", price: 10.0, category_id: 3 },
+            { name: "Spiral Notebook", price: 120000.0, category_id: 3 },
+            { name: "Face Cap", price: 15.0, category_id: 2 },
+            { name: "Mug", price: 5.0, category_id: 3 },
+            { name: "Hoodies", price: 30.0, category_id: 2 },
         ];
 
         const createProducts = await prisma.products.createMany({ data: productData });
@@ -77,21 +79,25 @@ exports.storeSeeder = async (req, res) => {
         // Step 4: Prepare and seed product photos
         const photoData = products.flatMap((product) => {
             switch (product.name) {
-                case "Men Polo":
+                case "Tote Bag":
                     return [
-                        { file: "uploads/shop/shirt.jpg", product_id: product.id, is_cover: true },
-                        { file: "uploads/shop/shirt2.jpg", product_id: product.id },
+                        { file: "uploads/shop/bag.jpg", product_id: product.id, is_cover: true }
                     ];
-                case "Beat Headset":
+                case "Spiral Notebook":
                     return [
-                        { file: "uploads/shop/headset.jpg", product_id: product.id, is_cover: true },
+                        { file: "uploads/shop/notebook.jpg", product_id: product.id, is_cover: true },
                     ];
-                case "Airpod 4.3":
+                case "Face Cap":
                     return [
-                        { file: "uploads/shop/airpod.png", product_id: product.id, is_cover: true },
-                        { file: "uploads/shop/airpod2.jpeg", product_id: product.id },
-                        { file: "uploads/shop/airpod3.jpeg", product_id: product.id },
-                        { file: "uploads/shop/airpod4.jpeg", product_id: product.id },
+                        { file: "uploads/shop/facecap.png", product_id: product.id, is_cover: true }
+                    ];
+                case "Mug":
+                    return [
+                        { file: "uploads/shop/cup.png", product_id: product.id, is_cover: true }
+                    ];
+                case "Hoodies":
+                    return [
+                        { file: "uploads/shop/hoodies.png", product_id: product.id, is_cover: true }
                     ];
                 default:
                     return [];

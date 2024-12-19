@@ -192,53 +192,103 @@ exports.verifyOtp = async ({otp, email, purpose, new_password}, res) => {
     }
 }
 
+// const authenticate = async (email, password) => {
+//     try {
+//         const user = await prisma.users.findUnique({
+//             where:{email:email}
+//         });
+//         if(user){
+//             const passwordCheck = await argon2.verify(user.password, password);
+
+//             if(passwordCheck){
+               
+//                 const payload = {
+//                     id: user.id,
+//                     email: user.email
+//                 }
+
+//                 const options = {
+//                     expiresIn: 7 * 24 * 60 * 60,
+//                     // expiresIn: 30 * 24 * 60 * 60,
+                   
+//                 }
+//                 jwt.sign(payload, secretKey, options)
+//                 return{
+//                     status:true,
+//                     is_verified:user.is_verified == '0' ? false : true,
+//                     token: jwt.sign(payload, secretKey, options)
+//                 }
+//             }else{
+//                 return{
+//                     status:false,
+//                     error:"invalid credentials"
+//                 }
+//             }
+//         }else{
+//             return{
+//                 status:false,
+//                 error:"invalid credentials"
+//             }
+//         }
+//     } catch (error) {
+//         console.log(error);
+        
+//         return{
+//             status:false,
+//             error:error
+//         }
+//     }
+// }
+
 const authenticate = async (email, password) => {
     try {
-        const user = await prisma.users.findUnique({
-            where:{email:email}
+        const user = await prisma.users.findFirst({
+            where: {
+                email: email,
+                deleted_at: null, // Ensure the user is not soft-deleted
+            },
         });
-        if(user){
+
+        if (user) {
             const passwordCheck = await argon2.verify(user.password, password);
 
-            if(passwordCheck){
-               
+            if (passwordCheck) {
                 const payload = {
                     id: user.id,
-                    email: user.email
-                }
+                    email: user.email,
+                };
 
                 const options = {
-                    expiresIn: 7 * 24 * 60 * 60,
-                    // expiresIn: 30 * 24 * 60 * 60,
-                   
-                }
-                jwt.sign(payload, secretKey, options)
-                return{
-                    status:true,
-                    is_verified:user.is_verified == '0' ? false : true,
-                    token: jwt.sign(payload, secretKey, options)
-                }
-            }else{
-                return{
-                    status:false,
-                    error:"invalid credentials"
-                }
+                    expiresIn: 7 * 24 * 60 * 60, // Token expires in 7 days
+                };
+
+                return {
+                    status: true,
+                    is_verified: user.is_verified == 0 ? false : true,
+                    token: jwt.sign(payload, secretKey, options),
+                };
+            } else {
+                return {
+                    status: false,
+                    error: "Invalid credentials",
+                };
             }
-        }else{
-            return{
-                status:false,
-                error:"invalid credentials"
-            }
+        } else {
+            return {
+                status: false,
+                error: "Invalid credentials",
+            };
         }
     } catch (error) {
         console.log(error);
-        
-        return{
-            status:false,
-            error:error
-        }
+
+        return {
+            status: false,
+            error: error.message || "An error occurred",
+        };
     }
-}
+};
+
 exports.loginUser = async(req_data, res) => {
     try {
         const auth = await authenticate(req_data.email, req_data.password);

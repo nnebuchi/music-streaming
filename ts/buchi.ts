@@ -26,23 +26,28 @@ interface FieldObjects {
 }
 
 interface FindCriteria {
-    [key: string]: string; // Index signature allows string keys
+    [key: string]: string|null; // Index signature allows string keys
 }
 
 const getOriginalWordFromCompoundWord = (compound_word: string) => {
     return compound_word?.replace('_', ' ');
 }
 
-const checkEmailInDB = async (input:Input, db_model:string) => {
-    const finder: FindCriteria = {};
+const checkFieldInDB = async (input:Input, db_model:string) => {
+    const soft_delete = process.env.SOFT_DELETE;
+    const finder: FindCriteria = soft_delete ? {deleted_at:null} : {};
+    
     finder[input.field] = input.value;
+    console.log(finder);
+    
     // const model = toPascalCase(db_table);
-    const record =  await prisma[db_model].findUnique({
+    
+    const record =  await prisma[db_model].findFirst({
         where:finder
     });
 
     if (record) {
-        console.log('found');
+        console.log(record);
         return true
     } else {
         console.log('not found');
@@ -98,7 +103,7 @@ const buchi_validate = async (input: Input, constraints: Constraints, alias: str
                 message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " does not match the " + getOriginalWordFromCompoundWord(constraints?.must_match) + " field" : alias + " does not match the " + getOriginalWordFromCompoundWord(constraints?.must_match) + " field"
             },
             unique:{
-                pass: constraints?.hasOwnProperty('unique') === true ? (await checkEmailInDB(input, constraints?.unique) ? false:true) : true,
+                pass: constraints?.hasOwnProperty('unique') === true ? (await checkFieldInDB(input, constraints?.unique) ? false:true) : true,
                 message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " already taken" : alias + " already taken"
             }
 

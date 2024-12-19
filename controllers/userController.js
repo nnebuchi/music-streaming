@@ -1,4 +1,4 @@
-const { runValidation } = require('../lib/buchi__old');
+const { runValidation } = require('../lib/buchi');
 const userService =  require('../services/userService');
 
 
@@ -52,7 +52,23 @@ exports.socials = async(req, res) => {
 
 
 exports.deleteAccount = async (req, res) => {
-  return userService.deleteAccount(req.user, res)
+  const validate = await runValidation([
+    {
+      input: { value: req.body.password, field: "password", type: "text" },
+      rules: { required: true },
+    },
+  ]);
+
+  if(validate){
+    if(validate?.status === false) {
+      return res.status(409).json({
+          status:"fail",
+          errors:validate.errors,
+          message:"Request Failed",
+      });
+    }
+  }
+  return userService.deleteAccount(req, res)
 }
 
 exports.updateSocials = (req, res) => {

@@ -1,5 +1,5 @@
 
-const { runValidation } = require('../lib/buchi__old');
+const { runValidation } = require('../lib/buchi');
 const genericService = require('../services/genericService');
 
 exports.version = async(req, res)=>{

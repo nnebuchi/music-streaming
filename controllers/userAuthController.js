@@ -1,4 +1,4 @@
-const { runValidation } = require('../lib/buchi__old');
+const { runValidation } = require('../lib/buchi');
 const userAuthService =  require('../services/userAuthService');
 
 
@@ -162,7 +162,7 @@ exports.sendOtp = async(req, res) => {
       if(handleOtp?.status){
           return res.status(200).json({
               status:"success",
-              message:`otp resent successfully,  use ${handleOtp.otp} as your OTP while we fix our mail server`,
+              message:`otp resent successfully`,
           });
       }else{
           return res.status(400).json({
