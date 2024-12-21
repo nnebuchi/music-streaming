@@ -3,3 +3,5 @@
 .env
 /backups
 migrations.sql
+prisma/schema__.prisma
+/migration_backup/*

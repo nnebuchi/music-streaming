@@ -433,7 +433,7 @@ exports.list = async (parsedUrl, user, res) => {
     const query = {};
     let where = {
       approved: true,
-      delete_at:null
+      deleted_at:null
     };
     if (queryString.creator_id) {
       where.user_id = parseInt(queryString.creator_id);
@@ -525,7 +525,7 @@ exports.list = async (parsedUrl, user, res) => {
       const query = {};
       let where = {
         approved: true,
-        delete_at:null
+        deleted_at:null
       };
 
       if (queryString.creator_id) {
@@ -608,7 +608,7 @@ exports.creators = async (req, res) => {
   try {
     console.log(req.user);
     const where = req.user ? {is_artise: true, NOT: { id: req.user?.id } } : {is_artise: true}
-    where.delete_at = null
+    where.deleted_at = null
   
     const allCreators = await prisma.users.findMany({
       where: where,
@@ -750,7 +750,7 @@ exports.tracksList = async (options, user, selected_track_id, res) => {
     // Construct filters
     const where = {
       approved: true,
-      delete_at:null,
+      deleted_at:null,
       id: {
         not: parseInt(selected_track_id),
       },
@@ -1234,6 +1234,17 @@ exports.trendingTracks = async (req, res) => {
         listens: {
           _count: 'desc',
         },
+      },
+      include:{
+        artiste:{
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            profile_photo: true,
+          }
+        }
       },
       where: {
         approved:true,
