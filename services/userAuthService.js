@@ -51,8 +51,8 @@ exports.createUser = async(user_data, res) => {
 
 exports.resendOtp = async (email, purpose, res) => {
     try {
-        const user = await prisma.users.findUnique({
-            where:{email:email}
+        const user = await prisma.users.findFirst({
+            where:{email:email, deleted_at:null}
         });
         
         if(user){
@@ -149,22 +149,27 @@ exports.verifyOtp = async ({otp, email, purpose, new_password}, res) => {
             }
             const delete_otps = await deleteUserOtps(email)
             if(delete_otps === true){
-                if(new_password){
-                    await prisma.users.update({
-                        where: { email: email },
-                        data: {
-                            password: await argon2.hash(new_password)
-                        }
-                    }); 
-
-                }else{
-                    await prisma.users.update({
-                        where: { email: email },
-                        data: {
-                            is_verified: 1
-                        }
-                    }); 
+                const user = await prisma.users.findFirst({
+                    where: { email: email, deleted_at: null },
+                })
+                if(user){
+                    if(new_password){
+                        await prisma.users.update({
+                            where: { id:user.id },
+                            data: {
+                                password: await argon2.hash(new_password)
+                            }
+                        }); 
+                    }else{
+                        await prisma.users.update({
+                            where: { id:user.id },
+                            data: {
+                                is_verified: 1
+                            }
+                        }); 
+                    }
                 }
+              
                 return res.status(200).json({
                     status:"success",
                     message:"Completed",
@@ -184,6 +189,8 @@ exports.verifyOtp = async ({otp, email, purpose, new_password}, res) => {
             });
         }
     } catch (error) {
+        console.log(error);
+        
         return res.status(400).json({
             status:"fail",
             message:"Something Went Wrong",

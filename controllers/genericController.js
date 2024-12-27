@@ -33,3 +33,7 @@ exports.version = async(req, res)=>{
 exports.storeSeeder = async(req, res) => {
     return await genericService.storeSeeder(req, res)
 }
+
+exports.trackDiscussion = async(req, res) => {
+    return await genericService.trackDiscussion(res)
+}

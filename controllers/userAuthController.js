@@ -165,6 +165,8 @@ exports.sendOtp = async(req, res) => {
               message:`otp resent successfully`,
           });
       }else{
+        console.log(handleOtp);
+        
           return res.status(400).json({
               status:"fail",
               message:"Something went wrong",

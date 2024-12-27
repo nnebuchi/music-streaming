@@ -12,8 +12,8 @@ const fileService = require('./fileService');
 exports.changePassword = async (old_password, new_password, user, res) => {
     try {
         
-        const user_db_data = await prisma.users.findUnique({
-            where: {email: user.email},
+        const user_db_data = await prisma.users.findFirst({
+            where: {email: user.email, deleted_at: null},
             select: { password: true },
         })
 
@@ -53,8 +53,8 @@ exports.profile = async (user, res) => {
     try {
         
         // prisma.$middleware(user_middleware);
-        const user_data = await prisma.users.findUnique({
-            where:{email:user.email},
+        const user_data = await prisma.users.findFirst({
+            where:{email:user.email, deleted_at: null},
             include: {
                 socialProfiles: {
                     select: { id: true, url:true, social_id:true, social:{
@@ -87,11 +87,74 @@ exports.profile = async (user, res) => {
     }
 }
 
+exports.getThirdPartyProfile = async (slug, res) => {
+    try {
+        
+        // prisma.$middleware(user_middleware);
+        const user_data = await prisma.users.findFirst({
+            where:{slug:slug, deleted_at: null},
+            include: {
+                socialProfiles: {
+                    select: { id: true, url:true, social_id:true, social:{
+                        select: {logo:true, slug:true, title:true}
+                    }}
+                },
+                discussions:{
+                    where: {
+                        deleted_at: null,
+                      },
+                },
+                tracks:{
+                    where: {
+                        deleted_at: null,
+                      },
+                },
+                followers:{
+                    select: {follower_id:true},
+                    where:{
+                        deleted_at: null
+                    }
+                },
+                artistes:{
+                    select: {artiste_id:true},
+                    where:{
+                        deleted_at: null
+                    }
+                },
+                likedtracks:{
+                    select: {track_id:true},
+                    where:{
+                        deleted_at: null
+                    }
+                }
+              },
+        })
+        if(!user_data){
+            return res.status(404).json({
+                status: "fail",
+                message: "User not found",
+            });
+        }
+        return res.status(200).json({
+            status: "success",
+            message: "Profile Fetched",
+            data: await excludeCast(user_data, userCast)
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            status: "fail",
+            message: "Request Failed",
+            data: error
+        });
+    }
+}
+
 
 exports.updateProfile = async (req, res) => {
     try {
-        const user = await prisma.users.findUnique({
-            where: {email: req.user.email}
+        const user = await prisma.users.findFirst({
+            where: {email: req.user.email, deleted_at: null},
         });
         if(user){
             const request_data = req.body 
@@ -202,8 +265,8 @@ exports.updateProfile = async (req, res) => {
 
 exports.updateSocials = async (req_user, request_data, res) => {
     try {
-        const user = await prisma.users.findUnique({
-            where: { email: req_user.email }
+        const user = await prisma.users.findFirst({
+            where: { email: req_user.email, deleted_at: null }
         });
 
         if (!user) {
@@ -686,4 +749,31 @@ exports.getlikedtracks = async (req, res) => {
             error: error,
         });
     }  
+}
+
+
+exports.toggleNotification = async (req) => {
+    try {
+        const update = await prisma.users.update({
+            where:{
+                id:req.user.id
+            },
+            data:{
+                receive_notification:req.body.notification_status
+            }
+        });
+        if(update){
+            return {
+                status:true
+            }
+        }
+    } catch (error) {
+        console.log(error);
+        return {
+            status:false,
+            error:error
+        }
+    }
+    
+    
 }

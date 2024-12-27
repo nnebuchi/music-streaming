@@ -108,6 +108,88 @@ exports.add = async (req, res) => {
     }
 }
 
+exports.update = async (req, res) => {
+
+    try {
+        const validate = await runValidation([
+            { input: { value: req.body.track_id, field: "track_id", type: "text" }, rules: { required: true } },
+        ]);
+        
+        if(validate){
+            if(validate?.status === false) {
+                return res.status(409).json({
+                    status:"fail",
+                    errors:validate.errors,
+                    message:"Request Failed",
+                });
+            }else{
+                const track_data = await songService.update(req.body.track_id, req.body, req.user);
+                if(track_data.status){
+                    return res.status(200).json({
+                        status:'success',
+                        message:"track successfully updated",
+                        data: track_data.data
+                    })
+                }else{
+                    return res.status(400).json({
+                        status:'fail',
+                        error:track_data.error,
+                        message:"Adding track failed"
+                    })
+                }
+            }
+        }  
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            status:'fail',
+            error:"Something went wrong",
+            message:"Adding track failed"
+        })
+    }
+   
+}
+
+exports.delete = async (req, res) => {
+    try {
+        const validate = await runValidation([
+            { input: { value: req.body.track_id, field: "track_id", type: "text" }, rules: { required: true } },
+        ]);
+        
+        if(validate){
+            if(validate?.status === false) {
+                return res.status(409).json({
+                    status:"fail",
+                    errors:validate.errors,
+                    message:"Request Failed",
+                });
+            }else{
+                const track_data = await songService.delete(req.body.track_id);
+                if(track_data.status){
+                    return res.status(200).json({
+                        status:'success',
+                        message:"track successfully deleted",
+                        data: track_data.data
+                    })
+                }else{
+                    return res.status(400).json({
+                        status:'fail',
+                        error:track_data.error,
+                        message:"Deleting track failed"
+                    })
+                }
+            }
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({
+            status:'fail',
+            error:"Something went wrong",
+            message:"Deleting track failed"
+        })
+    }
+}
+
 exports.list = async(req, res) => {
     const parsedUrl = url.parse(req.url, true);
     return songService.list(parsedUrl, req.user, res)
@@ -236,7 +318,7 @@ exports.playTrack = async (req, res) => {
 
 exports.playTrackBySlug = async (req, res) => {
     const {slug} = req.params
-    return songService.playTrackBySlug(slug, res)
+    return songService.playTrackBySlug(slug, req.user, res)
 }
 
 exports.recordPlayback = async (req, res) => {

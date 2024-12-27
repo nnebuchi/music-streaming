@@ -42,6 +42,10 @@ exports.profile = (req, res) => {
   return userService.profile(req.user, res);
 }
 
+exports.getThirdPartyProfile = (req, res) => {
+  return userService.getThirdPartyProfile(req.params.slug, res);
+}
+
 exports.updateProfile = async (req, res) => {
   return userService.updateProfile(req, res);
 }
@@ -123,4 +127,41 @@ exports.getFollowings = async (req, res) => {
 
 exports.getLikedTracks = async (req, res) => {
   return userService.getLikedTracks(req, res);
+}
+
+exports.toggleNotification = async (req, res) => {
+  const validate = await runValidation([
+    {
+        input: { value: req?.body?.notification_status, field: "notification_status", type: "boolean" },
+        rules: { required: true, boolean:true},
+    }
+
+   
+  ]);
+
+  if(validate){
+    if(validate.status === false){
+        return res.status(409).json({
+            status:"fail",
+            errors:validate.errors,
+            message:"Could not save token",
+        });
+    }else{
+        const updateStatus = await userService.toggleNotification(req)
+        if(updateStatus.status){
+            return res.status(200).json({
+                status:"success",
+                message:"notification status updated"
+            })
+        }else{
+            console.log(updateStatus.error);
+            
+            return res.status(400).json({
+                status:"fail",
+                message:"Could not save token",
+                error:updateStatus.error
+            })
+        }
+    }
+}
 }

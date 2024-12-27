@@ -17,6 +17,7 @@ interface Constraints {
     email: boolean;
     must_match: string;
     unique:string;
+    boolean:boolean
 }
 
 interface FieldObjects {
@@ -75,7 +76,7 @@ const buchi_validate = async (input: Input, constraints: Constraints, alias: str
 
         const rules = {
             required: {
-                pass: constraints?.required === true ? (input?.type != 'file' ? (input?.type !="number" ? input?.value?.length > 0:typeof input?.value === 'number') : (input?.files?.length > 0)) : true,
+                pass: constraints?.required === true ? (input?.type != 'file' ? (input?.type !="number" ? input?.type =='boolean'  ? typeof input?.value === 'boolean' : (input?.value?.length > 0):typeof input?.value === 'number') : (input?.files?.length > 0)) : true,
                 message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " is required" : alias + " is required"
             },
             min_length: {
@@ -105,6 +106,10 @@ const buchi_validate = async (input: Input, constraints: Constraints, alias: str
             unique:{
                 pass: constraints?.hasOwnProperty('unique') === true ? (await checkFieldInDB(input, constraints?.unique) ? false:true) : true,
                 message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " already taken" : alias + " already taken"
+            }, 
+            boolean:{
+                pass: constraints?.boolean === true ? typeof input?.value === "boolean" || input?.value === "0" || input?.value === "1" : true,
+                message: alias === null ? getOriginalWordFromCompoundWord(input?.field) + " must be a boolean" : alias + " must be boolean"
             }
 
         };

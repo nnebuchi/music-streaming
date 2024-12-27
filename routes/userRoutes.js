@@ -8,11 +8,13 @@ const {uploadFile} = require('../services/fileService');
 
 // userRouter.use('/profile', ProfileRoutes);
 userRouter.get('/profile', verifyAuthToken, userController.profile);
+userRouter.get('/profile/:slug', verifyAuthToken, userController.getThirdPartyProfile);
 userRouter.post('/profile/update', verifyAuthToken, userController.updateProfile);
 userRouter.get('/profile/socials',verifyAuthToken, userController.socials);
 userRouter.post('/profile/socials/update', verifyAuthToken, userController.updateSocials);
 userRouter.post('/change-password', verifyAuthToken, userController.changePassword);
 userRouter.post('/delete-account', verifyAuthToken, userController.deleteAccount);
+userRouter.post('/toggle-notification', verifyAuthToken, userController.toggleNotification);
 userRouter.post(
     '/update-profile-photo',
     verifyAuthToken,

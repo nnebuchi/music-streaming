@@ -121,4 +121,51 @@ exports.storeSeeder = async (req, res) => {
     }
 };
 
+exports.trackDiscussion = async (res) => {
+    try {
+      // Fetch tracks with missing discussion_id efficiently
+    //   const discussionWithTracks = await prisma.discussions.findMany({
+    //     where:{
+    //        song_id:{
+    //             not:null
+    //         }
+    //     }
+        
+    //   });
+    //   get tracks whose id is not 
+      const tracksToUpdate = await prisma.tracks.findMany({});
+  
+      if (tracksToUpdate.length > 0) {
+        // Create discussions for tracks in a single transaction
+        const discussions = await prisma.discussions.createMany({
+          data: tracksToUpdate.map((track) => ({
+            title: track.title,
+            body: track.about,
+            user_id: track.user_id,
+            song_id: track.id,
+          })),
+          skipDuplicates: true, // Prevent duplicate discussions (optional)
+        });
+  
+        return res.status(200).json({
+          status: "success",
+          message: "Discussions created and tracks updated successfully",
+        });
+      } else {
+        // No tracks require discussion creation
+        return res.status(200).json({
+          status: "success",
+          message: "All tracks already have discussions",
+        });
+      }
+    } catch (error) {
+      console.error(error); // Log the error for debugging
+      return res.status(500).json({
+        status: "fail",
+        message: "An error occurred while creating discussions",
+        error: error.message,
+      });
+    }
+  };
+
 

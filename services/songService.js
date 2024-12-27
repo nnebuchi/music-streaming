@@ -153,49 +153,288 @@ exports.getArtistAlbums = async (artiste_id, res) => {
   }
 }
 exports.create = async(song_data, user) => {
-    try {
-      if(typeof song_data.featured != 'object' ){
-        return {
-          status: false,
-          error:"featured field must be an array"
-        }
-      }
-        const genres = song_data.genres;
-        delete song_data.genres;
-        song_data.featured = typeof song_data.featured == 'object' ? song_data.featured.toString() : NULL ;
-        song_data.user_id = user.id;
-        song_data.slug = await slugify(song_data?.title);
-        const add_song_data = await prisma.tracks.create({
-            data: song_data
-        });
-        if(add_song_data){
-          
-          genres.forEach(async (genre) => {
-            
-            await prisma.tracktogenres.create({
-              data: {
-                track_id:add_song_data.id,
-                genre_id: parseInt(genre)
-              }
-            });
-            
-          });
-
-          return {
-            status: true,
-            message:'track added successfully',
-            data: add_song_data
-          }
-        }  
-    } catch (error) {
-      console.log(error);
-      
+  try {
+    if(typeof song_data.featured != 'object' ){
       return {
         status: false,
-        error:error
+        error:"featured field must be an array"
       }
-      
     }
+      const genres = song_data.genres;
+      delete song_data.genres;
+      song_data.featured = typeof song_data.featured == 'object' ? song_data.featured.toString() : NULL ;
+      song_data.user_id = user.id;
+      song_data.slug = await slugify(song_data?.title);
+      const add_song_data = await prisma.tracks.create({
+          data: song_data
+      });
+      if(add_song_data){
+
+        genres.forEach(async (genre) => {
+          await prisma.tracktogenres.create({
+            data: {
+              track_id:add_song_data.id,
+              genre_id: parseInt(genre)
+            }
+          });
+          
+        });
+
+        const song_disco = await prisma.discussions.create({
+          data:{
+            title:song_data?.title,
+            body:song_data?.about,
+            user_id:user.id,
+            song_id: add_song_data.id
+          }
+        });
+
+        // if(song_disco){
+        //   await prisma.tracks.update({
+        //     where: {
+        //       id: add_song_data.id
+        //     },
+        //     data: {
+        //       discussion_id: song_disco.id
+        //     }
+        //   });
+        // }
+
+        return {
+          status: true,
+          message:'track added successfully',
+          data: add_song_data
+        }
+
+      }  
+  } catch (error) {
+    console.log(error);
+    return {
+      status: false,
+      error:error
+    }
+    
+  }
+}
+
+exports.update = async (track_id, song_data, user) => {
+  try {
+    // Check if featured field is an object
+    if (typeof song_data.featured !== 'object') {
+      return {
+        status: false,
+        error: "featured field must be an array"
+      }
+    }
+
+    // Retrieve existing track data
+    const existingTrack = await prisma.tracks.findUnique({
+      where: {
+        id: parseInt(track_id)
+      }
+    });
+
+    if (!existingTrack) {
+      return {
+        status: false,
+        error: "Track not found"
+      }
+    }
+
+    // Update track data
+    const genres = song_data.genres;
+    delete song_data.genres;
+    delete song_data.track_id;
+    song_data.featured = typeof song_data.featured === 'object' ? song_data.featured.toString() : NULL;
+    song_data.user_id = user.id;
+    song_data.slug = await slugify(song_data?.title);
+
+
+    // Update track
+    const updatedTrack = await prisma.tracks.update({
+      where: {
+        id: parseInt(track_id)
+      },
+      data: song_data
+    });
+
+    // Update genres
+    await prisma.tracktogenres.deleteMany({
+      where: {
+        track_id:parseInt(track_id)
+      }
+    });
+    genres.forEach(async (genre) => {
+      await prisma.tracktogenres.create({
+        data: {
+          track_id:parseInt(track_id),
+          genre_id: parseInt(genre)
+        }
+      });
+    });
+
+    // Update discussion
+    const discussion = await prisma.discussions.findFirst({
+      where: {
+        song_id:parseInt(track_id)
+      }
+    });
+    if (discussion) {
+      await prisma.discussions.update({
+        where: {
+          id: discussion.id
+        },
+        data: {
+          title: song_data?.title,
+          body: song_data?.about,
+          user_id: user.id,
+          song_id: parseInt(track_id)
+        }
+      });
+    }
+
+    return {
+      status: true,
+      message: 'Track updated successfully',
+      data: updatedTrack
+    }
+  } catch (error) {
+    console.log(error);
+    return {
+      status:false,
+      error:error,
+      message:"Something went wrong"
+    }
+  }
+}
+
+exports.delete = async (id) => {
+  try {
+    const track = await prisma.tracks.findUnique({
+      where: {
+        id: parseInt(id)
+      },
+      include: {
+        _count: {
+          select: {
+            listens: true,
+            playlists: true,
+            likes: true,
+            discussion: true,
+            // comments: true
+          }
+        },
+        discussion: {
+          include: {
+            _count: {
+              select: {
+                comments: true,
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!track) {
+      return {
+        status: false,
+        error: "Track not found"
+      }
+    }
+
+    let deleteTrack = true;
+
+    if (track._count.discussion > 0) {
+      const discussion = await prisma.discussions.findUnique({
+        where: {
+          song_id: track.id
+        }
+      });
+      if (track.discussion._count.comments > 0) {
+        deleteTrack = false;
+        await prisma.comments.updateMany({
+          where: {
+            discussion_id: discussion.id
+          },
+          data: {
+            deleted_at: new Date()
+          }
+        });
+      } else {
+        await prisma.discussions.delete({
+          where: {
+            id: discussion.id
+          }
+        });
+      }
+    }
+
+    if (track._count.listens > 0) {
+      deleteTrack = false;
+      await prisma.tracklisten.updateMany({
+        where: {
+          track_id: track.id
+        },
+        data: {
+          deleted_at: new Date()
+        }
+      });
+    } else if (track._count.playlists > 0) {
+      deleteTrack = false;
+      await prisma.playlisttracks.updateMany({
+        where: {
+          track_id: track.id
+        },
+        data: {
+          deleted_at: new Date()
+        }
+      });
+    } else if (track._count.likes > 0) {
+      deleteTrack = false;
+      await prisma.tracklike.updateMany({
+        where: {
+          track_id: track.id
+        },
+        data: {
+          deleted_at: new Date()
+        }
+      });
+    }
+
+    if (deleteTrack) {
+      await prisma.tracktogenres.deleteMany({
+        where: {
+          track_id: track.id
+        }
+      });
+      await prisma.tracks.delete({
+        where: {
+          id: track.id
+        }
+      });
+    } else {
+      await prisma.tracks.update({
+        where: {
+          id: track.id
+        },
+        data: {
+          deleted_at: new Date()
+        }
+      });
+    } 
+
+    return {
+      status: true,
+      message: 'Track deleted successfully'
+    }
+  } catch (error) {
+    console.log(error);
+    return {
+      status: false,
+      error: error
+    }
+  }
 }
 
 exports.addTrackCoverPhoto = async (track_id, file, res) => {
@@ -263,81 +502,81 @@ exports.handleTrackCover = async (req, directory, res) => {
 
 
 
-exports.update = async (track_id, song_data) => {
-  try {
-    // Find the track by ID
-    const track = await prisma.tracks.findUnique({
-      where: {
-        id: parseInt(track_id)
-      }
-    });
+// exports.update = async (track_id, song_data) => {
+//   try {
+//     // Find the track by ID
+//     const track = await prisma.tracks.findUnique({
+//       where: {
+//         id: parseInt(track_id)
+//       }
+//     });
 
-    if (!track) {
+//     if (!track) {
      
-      return {
-        status: false,
-        error: "Track not found"
-      };
-    }
+//       return {
+//         status: false,
+//         error: "Track not found"
+//       };
+//     }
 
-    console.log(song_data);
-    // Remove fields that are not supposed to be updated
-    song_data = await excludeCast(song_data, songCast);
+//     console.log(song_data);
+//     // Remove fields that are not supposed to be updated
+//     song_data = await excludeCast(song_data, songCast);
     
-    const genres = song_data.genres; // Save potential genres
+//     const genres = song_data.genres; // Save potential genres
 
-    if (genres) {
-      delete song_data.genres; // Remove genres from song_data for the update
+//     if (genres) {
+//       delete song_data.genres; // Remove genres from song_data for the update
 
-      // Delete existing genre associations
-      await prisma.tracktogenres.deleteMany({
-        where: {
-          track_id: track_id,
-        }
-      });
+//       // Delete existing genre associations
+//       await prisma.tracktogenres.deleteMany({
+//         where: {
+//           track_id: track_id,
+//         }
+//       });
 
-      // Add new genre associations
-      for (const genre of genres) {
-        await prisma.tracktogenres.create({
-          data: {
-            track_id: track_id,
-            genre_id: parseInt(genre)
-          }
-        });
-      }
-    }
+//       // Add new genre associations
+//       for (const genre of genres) {
+//         await prisma.tracktogenres.create({
+//           data: {
+//             track_id: track_id,
+//             genre_id: parseInt(genre)
+//           }
+//         });
+//       }
+//     }
     
-    // If there are still fields in song_data to update
-    if (Object.keys(song_data).length > 0) {
-      console.log('updating');
+//     // If there are still fields in song_data to update
+//     if (Object.keys(song_data).length > 0) {
+//       console.log('updating');
       
-      const updatedTrack = await prisma.tracks.update({
-        where: {
-          id: parseInt(track_id)
-        },
-        data: song_data
-      });
+//       const updatedTrack = await prisma.tracks.update({
+//         where: {
+//           id: parseInt(track_id)
+//         },
+//         data: song_data
+//       });
 
-      return {
-        status: true,
-        message: 'Track updated successfully',
-        data: updatedTrack
-      };
-    }
+//       return {
+//         status: true,
+//         message: 'Track updated successfully',
+//         data: updatedTrack
+//       };
+//     }
 
-    return {
-      status: true,
-      message: 'Track updated successfully, but no song data provided for update'
-    };
+//     return {
+//       status: true,
+//       message: 'Track updated successfully, but no song data provided for update'
+//     };
 
-  } catch (error) {
-    console.log(error);
-    return {
-      status: false,
-      error: error.message || "An error occurred"
-    };
-  }
-};
+//   } catch (error) {
+//     console.log(error);
+//     return {
+//       status: false,
+//       error: error.message || "An error occurred"
+//     };
+//   }
+// };
 
 
 exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
@@ -488,6 +727,31 @@ exports.list = async (parsedUrl, user, res) => {
           profile_photo: true,
         },
       },
+      discussion:{
+        include:{
+          author: {
+            select: {
+              first_name: true,
+              last_name: true,
+              profile_photo: true,
+            },
+          },
+          _count: {
+            select: { likes: true, comments: true },
+          },
+          likes: {  // Include likes and filter by the authenticated user
+            select: {
+              user_id: true,  // Select only the user IDs of users who liked the post
+            },
+            where: {
+              user_id: user.id,  // Filter likes to check if the authenticated user liked this post
+            },
+          },
+        }
+        
+        
+      }
+      
     };
 
     const tracks = await prisma.tracks.findMany(query);
@@ -880,10 +1144,60 @@ exports.playTrack = async (trackId, parsedUrl, user, res) => {
  
 }
 
-exports.playTrackBySlug = async (slug, res) => {
+exports.playTrackBySlug = async (slug, user, res) => {
   const track = await prisma.tracks.findFirst({
     where: {
       slug: slug
+    }, 
+    include: {
+      discussion:{
+        comments:{
+          user:{
+            select:{
+              first_name:true, last_name:true, profile_photo:true
+            }
+          },
+          replies:{
+            take: 2,
+            include:{
+              user:{
+                select:{
+                  first_name:true, last_name:true, profile_photo:true
+                }
+              },
+              likes: {  // Include likes and filter by the authenticated user
+                select: {
+                  user_id: true,  // Select only the user IDs of users who liked the post
+                },
+                where: {
+                  user_id: user.id,  // Filter likes to check if the authenticated user liked this post
+                },
+              },
+              _count:{
+                select:{
+                  likes:true,
+                  replies:true
+                }
+              }
+            },
+    
+          },
+          likes: {  // Include likes and filter by the authenticated user
+            select: {
+              user_id: true,  // Select only the user IDs of users who liked the post
+            },
+            where: {
+              user_id: user.id,  // Filter likes to check if the authenticated user liked this post
+            },
+          },
+          _count:{
+            select:{
+              likes:true,
+              replies:true
+            }
+          }
+        }
+      }
     }
    });
 

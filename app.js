@@ -25,6 +25,7 @@ const songRoutes = require('./routes/songRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const studioRouter = require('./routes/studioRoutes');
 const storeRouter = require('./routes/storeRoutes');
+const notificationRouter = require('./routes/notificationRoutes');
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
@@ -33,6 +34,7 @@ app.use('/song', songRoutes);
 app.use('/community', communityRoutes);
 app.use('/studio', studioRouter);
 app.use('/store', storeRouter);
+app.use('/notification', notificationRouter);
 
 // Error handling middleware (optional)
 // app.use((err, req, res, next) => {
