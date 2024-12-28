@@ -144,7 +144,7 @@ exports.toggleNotification = async (req, res) => {
         return res.status(409).json({
             status:"fail",
             errors:validate.errors,
-            message:"Could not save token",
+            message:"Something went wrong",
         });
     }else{
         const updateStatus = await userService.toggleNotification(req)

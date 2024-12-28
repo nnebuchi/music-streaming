@@ -69,7 +69,12 @@ exports.profile = async (user, res) => {
                 },
                 likedtracks:{
                     select: {track_id:true}
-                }
+                },
+                tracks:{
+                    where: {
+                        deleted_at: null,
+                      },
+                },
               },
         })
         return res.status(200).json({
@@ -108,6 +113,7 @@ exports.getThirdPartyProfile = async (slug, res) => {
                 tracks:{
                     where: {
                         deleted_at: null,
+                        approved: true
                       },
                 },
                 followers:{
