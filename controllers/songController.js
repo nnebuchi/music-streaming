@@ -245,6 +245,8 @@ exports.genres = async (req, res) => {
 
 exports.addTrackCoverPhoto = async (req, res) => {
     if (req.file) {
+        console.log("dfdfg");
+        
         const directory = 'track_covers';
         const track_id = req.body.track_id
         const validate = await runValidation([
@@ -261,8 +263,6 @@ exports.addTrackCoverPhoto = async (req, res) => {
                 message:"Request Failed",
             });
             }else{
-                
-                // return songService.addTrackCoverPhoto(track_id, req.file, res)
                 return songService.handleTrackCover(req, directory, res)
             }
         }

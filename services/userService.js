@@ -102,6 +102,7 @@ exports.getThirdPartyProfile = async (slug, res) => {
                 discussions:{
                     where: {
                         deleted_at: null,
+                        song_id: null
                       },
                 },
                 tracks:{

@@ -473,8 +473,16 @@ exports.handleTrackCover = async (req, directory, res) => {
       }
           
       const cover_path = disk == 'cloudinary' ? await extractDynamicPart(filePath) : filePath
-      const update_track = await this.update(req.body.track_id, {cover:cover_path});
-      if(update_track.status){
+      const update_track = await prisma.tracks.update({
+        where: {
+          id: parseInt(req.body.track_id)
+        },
+        data: {
+          cover: cover_path
+        }
+      })
+      // const update_track = await this.update(req.body.track_id, {cover:cover_path});
+      if(update_track){
         return res.status(200).json({
           status: 'success',
           message: "Track cover photo updated"
@@ -482,8 +490,8 @@ exports.handleTrackCover = async (req, directory, res) => {
       }else{
         return res.status(400).json({
           status: 'fail',
-          message: update_track.message,
-          error:update_track.error
+          message: "Something went wrong",
+          error:update_track
         });
       }
     }catch (error) {
@@ -1151,36 +1159,16 @@ exports.playTrackBySlug = async (slug, user, res) => {
     }, 
     include: {
       discussion:{
-        comments:{
-          user:{
-            select:{
-              first_name:true, last_name:true, profile_photo:true
-            }
-          },
-          replies:{
-            take: 2,
-            include:{
-              user:{
-                select:{
-                  first_name:true, last_name:true, profile_photo:true
-                }
-              },
-              likes: {  // Include likes and filter by the authenticated user
-                select: {
-                  user_id: true,  // Select only the user IDs of users who liked the post
-                },
-                where: {
-                  user_id: user.id,  // Filter likes to check if the authenticated user liked this post
-                },
-              },
-              _count:{
-                select:{
-                  likes:true,
-                  replies:true
-                }
-              }
+        include:{
+          author: {
+            select: {
+              first_name: true,
+              last_name: true,
+              profile_photo: true,
             },
-    
+          },
+          _count: {
+            select: { likes: true, comments: true },
           },
           likes: {  // Include likes and filter by the authenticated user
             select: {
@@ -1190,13 +1178,9 @@ exports.playTrackBySlug = async (slug, user, res) => {
               user_id: user.id,  // Filter likes to check if the authenticated user liked this post
             },
           },
-          _count:{
-            select:{
-              likes:true,
-              replies:true
-            }
-          }
         }
+        
+        
       }
     }
    });

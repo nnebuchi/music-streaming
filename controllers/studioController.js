@@ -1,5 +1,5 @@
 const studioService = require("../services/studioService.js");
-const { runValidation } = require("../lib/buchi__old.js");
+const { runValidation } = require("../lib/buchi.js");
 
 exports.bookStudio = async (req, res) => {
     const validate = await runValidation([
