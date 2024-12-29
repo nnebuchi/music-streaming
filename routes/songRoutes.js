@@ -42,6 +42,7 @@ songRouter.use('/tracks', trackRouter);
 songRouter.use('/creators', artisteRouter);
     artisteRouter.get('/', addAuthToken, songController.creators);
     artisteRouter.post('/follow', verifyAuthToken, creatorController.addFollower);
+    artisteRouter.get('/top', verifyAuthToken, creatorController.topArtistes);
 
 // Playlist routes
 songRouter.use('/playlists', playlistRouter);

@@ -545,6 +545,3 @@ exports.trendingTracks = async (req, res) => {
     return songService.trendingTracks(req, res);
 }
 
-exports.topArtistes = async (req, res) => {
-    return songService.topArtistes(res);
-}

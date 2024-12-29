@@ -879,7 +879,8 @@ exports.list = async (parsedUrl, user, res) => {
 exports.creators = async (req, res) => {
   try {
     console.log(req.user);
-    const where = req.user ? {is_artise: true, NOT: { id: req.user?.id } } : {is_artise: true}
+    // const where = req.user ? {is_artise: true, NOT: { id: req.user?.id } } : {is_artise: true}
+    const where = req.user ? {NOT: { id: req.user?.id } } : {}
     where.deleted_at = null
   
     const allCreators = await prisma.users.findMany({
@@ -1600,80 +1601,7 @@ exports.trendingTracks = async (req, res) => {
 }
 
 
-exports.topArtistes = async (res) => {
-  try {
-    const trendingArtistes = await prisma.tracks.findMany({
-      where: {
-        listens: {
-          some: {
-            created_at: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            },
-          },
-        },
-      },
-      groupBy: {
-        user_id: true,
-      },
-      _count: {
-        user_id: true,
-      },
-      orderBy: {
-        _count: {
-          _all: 'desc',
-        },
-      },
-      take: 15, // Adjust to the desired number of trending artistes
-      include: {
-        user: {
-          select: {
-            id: true,
-            first_name: true,
-            last_name: true,
-            profile_photo: true,
-            is_artise: true,
-            include: {
-              socialProfiles: {
-                select: {
-                  id: true,
-                  url: true,
-                  social: {
-                    select: {
-                      title: true,
-                      logo: true,
-                      slug: true,
-                    },
-                  },
-                },
-              },
-              _count: {
-                select: {
-                  followers: true, // Counting the followers
-                },
-              },
-            },
-          },
-        },
-      },
-    });
 
-    if(trendingArtistes){
-      return res.status(200).json({
-        status:"success",
-        data:trendingArtistes
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json({
-      status:"fail",
-      error:error,
-      message:"Something went wrong"
-    });
-  }
-  
-  
-}
 
 // exports.deletePlaylist = async (user_id, playlist_id) => {
 //   const delete_list = await prisma.playlists.delete({
