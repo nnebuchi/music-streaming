@@ -294,6 +294,7 @@ model products {
     product_photos  product_photos[]
     created_at      DateTime @default(now())
     updated_at  DateTime @updatedAt @default(now())
+    deleted_at      DateTime?
 }
 
 model product_categories {
@@ -309,6 +310,7 @@ model product_photos {
     file                String @db.Text
     is_cover            Boolean @default(false)
     product             products @relation(fields: [product_id], references: [id])
+    deleted_at      DateTime?
 }
 
 model orders {
@@ -331,6 +333,7 @@ model order_products {
     amount          Decimal @db.Decimal(10, 2)
     product         products  @relation(fields: [product_id], references: [id])
     order           orders  @relation(fields: [order_id], references: [id])
+    deleted_at      DateTime?
 }
 
 model transactions {
@@ -397,4 +400,25 @@ model fcm_tokens {
     created_at  DateTime @default(now())
     updated_at  DateTime @updatedAt
     user        users    @relation(fields: [user_id], references: [id])
+}
+
+model sliders {
+    id          Int     @id @default(autoincrement())
+    title       String?
+    file        String  @db.Text
+    screen      String
+    device      String
+    is_active   Boolean @default(false)
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+}
+
+model screens {
+    id      Int     @id @default(autoincrement())
+    name    String
+}
+
+model device_types {
+    id      Int     @id @default(autoincrement())
+    name    String
 }

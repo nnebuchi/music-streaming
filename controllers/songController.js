@@ -545,3 +545,6 @@ exports.trendingTracks = async (req, res) => {
     return songService.trendingTracks(req, res);
 }
 
+exports.recentlyPlayed = async (req, res) => {
+    return songService.recentlyPlayed(req, res);
+}

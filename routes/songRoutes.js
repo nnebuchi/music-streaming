@@ -32,6 +32,7 @@ songRouter.use('/tracks', trackRouter);
     trackRouter.post('/:track_id/like', verifyAuthToken, songController.likeTrack);
     trackRouter.get('/:track_id/play', verifyAuthToken, songController.playTrack);
     trackRouter.get('/trending', addAuthToken, songController.trendingTracks);
+    trackRouter.get('/recently-played', verifyAuthToken, songController.recentlyPlayed);
     trackRouter.get('/:slug', verifyAuthToken, songController.playTrackBySlug);
     trackRouter.post('/record-playback', verifyAuthToken, songController.recordPlayback);
     trackRouter.post('/pause-or-play', verifyAuthToken, songController.updatePlayStatus);

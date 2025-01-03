@@ -716,6 +716,7 @@ exports.list = async (parsedUrl, user, res) => {
       query.orderBy = { id: 'desc' };
     }
 
+
     const page = queryString.page ? parseInt(queryString.page) : 1;
     console.log("page: " + page);
     
@@ -1600,6 +1601,57 @@ exports.trendingTracks = async (req, res) => {
   
 }
 
+// exports.recentlyPlayed = async(req, res) => {
+//   try {
+//     const page_size = parseInt(process.env.TRACK_PER_PAGE);
+//     const page = parseInt(req.query.page) || 1;
+
+//     const tracks = await prisma.tracks.findMany({
+//       include: {
+//         listens: {
+//           orderBy: {
+//             updated_at: 'desc', 
+//           },
+//           include: {
+//             track: true, 
+//           },
+//           skip: (page - 1) * page_size,
+//           take: page_size,
+//         },
+//       },
+      
+//     });
+
+//     const totalTracksCount = await prisma.tracklisten.count({
+//       where: {
+//         user_id: req.user.id,
+//       },
+//     });
+    
+//     const totalPages = Math.ceil(totalTracksCount / page_size);
+
+//       const paginatedResult = {
+//         tracks: tracks.listenedtracks,
+//         meta: {
+//           total: totalTracksCount,
+//           page,
+//           last_page: totalPages,
+//           page_size,
+//           nextPage: page === totalPages ? null : page + 1,
+//         },
+//       };
+
+//     res.status(200).json({ 
+//       status:"success",
+//       tracks: paginatedResult
+//     }); 
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Failed to fetch tracks' });
+//   }
+// }
+
+
 
 
 
@@ -1613,3 +1665,93 @@ exports.trendingTracks = async (req, res) => {
 //   return delete_list; 
   
 // }
+
+exports.recentlyPlayed = async(req, res) => {
+  const page = parseInt(req.query.page) || 1; // Default to page 1 if no page is provided
+    const page_size = parseInt(process.env.TRACK_PER_PAGE);
+
+    try {
+        // Fetch tracks with listens by the user, applying pagination
+        const listenedTracks = await prisma.tracks.findMany({
+            where: {
+                listens: {
+                    some: {
+                        user_id: parseInt(req.user.id),
+                        deleted_at: null, // Exclude soft-deleted listens
+                    },
+                },
+            },
+            select: {
+                id: true,
+                title: true,
+                duration: true,
+                cover: true,
+                file: true,
+                video_file: true,
+                artiste: {
+                    select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        slug:true
+                    },
+                },
+                listens: {
+                    where: {
+                        user_id: parseInt(req.user.id),
+                    },
+                    select: {
+                        created_at: true,
+                    },
+                },
+            },
+            skip: (page - 1) * page_size, // Skip based on the current page and page size
+            take: page_size, // Limit the number of results per page
+        });
+
+        // Get the total count of tracks listened to by the user
+        const totalTracksCount = await prisma.tracks.count({
+            where: {
+                listens: {
+                    some: {
+                        user_id: parseInt(req.user.id),
+                        deleted_at: null,
+                    },
+                },
+            },
+        });
+
+        // Sort tracks by most recent listen
+        const sortedTracks = listenedTracks
+            .map(track => ({
+                ...track,
+                mostRecentListen: track.listens
+                    .map(listen => listen.created_at)
+                    .sort((a, b) => new Date(b) - new Date(a))[0], // Get the most recent listen date
+            }))
+            .sort((a, b) => new Date(b.mostRecentListen) - new Date(a.mostRecentListen));
+
+        // Calculate the total number of pages
+        const totalPages = Math.ceil(totalTracksCount / page_size);
+
+        // Construct the paginated result
+        const paginatedResult = {
+            tracks: sortedTracks,
+            meta: {
+                total: totalTracksCount,
+                page,
+                last_page: totalPages,
+                page_size,
+                nextPage: page === totalPages ? null : page + 1,
+            },
+        };
+
+        res.status(200).json({
+            status: 'success',
+            data: paginatedResult,
+        });
+    } catch (error) {
+        console.error('Error fetching listened tracks:', error);
+        res.status(500).json({ status: 'error', error: 'Failed to fetch listened tracks' });
+    }
+}

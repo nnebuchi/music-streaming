@@ -68,7 +68,27 @@ exports.profile = async (user, res) => {
                     select: {artiste_id:true}
                 },
                 likedtracks:{
-                    select: {track_id:true}
+                    where: { // Corrected here
+                        track: {
+                          approved: true,
+                          deleted_at: null
+                        }
+                    },
+                    include:{
+                        track:{ 
+                            include: {
+                                artiste:{
+                                    select: {
+                                        id: true,
+                                        first_name: true,
+                                        last_name: true,
+                                        profile_photo: true,
+                                        slug:true
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
                 tracks:{
                     where: {
@@ -175,7 +195,7 @@ exports.updateProfile = async (req, res) => {
             }
 
             const updateUser = await prisma.users.update({
-                where: {email: user.email},
+                where: {id: user.id},
                 data: update_data,
             });
 
@@ -192,7 +212,13 @@ exports.updateProfile = async (req, res) => {
             })
         }
     } catch (error) {
-   
+        console.log(error);
+        
+        return res.status(404).json({
+            status: "fail",
+            error:error,
+            message: "Something went wrong"
+        })
     }
 }
 
