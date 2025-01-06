@@ -588,12 +588,14 @@ exports.handleTrackCover = async (req, directory, res) => {
 
 
 exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
-  console.log("type", type);
+  console.log(req.body);
   
   const { originalname, chunkIndex, totalChunks, track_id } = req.body;
   const tempPath = req.file.path;
   let uploadDir = file_disks[disk]['root'];
   let tempUploadDir = path.join(uploadDir, "tracks");
+  // console.log(originalname);
+  
   const finalPath = path.join(tempUploadDir, originalname);
 
   // Ensure the upload directory exists
@@ -734,7 +736,14 @@ exports.list = async (parsedUrl, user, res) => {
           last_name: true,
           email: true,
           profile_photo: true,
-        },
+          slug:true,
+          followers:{
+            select:{
+              follower:true
+            }
+          }
+        }
+       
       },
       discussion:{
         include:{
@@ -759,6 +768,11 @@ exports.list = async (parsedUrl, user, res) => {
         }
         
         
+      },
+      genres:{
+        include:{
+          genre:true
+        }
       }
       
     };
@@ -1183,7 +1197,23 @@ exports.playTrackBySlug = async (slug, user, res) => {
         }
         
         
-      }
+      },
+      artiste: {
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          profile_photo: true,
+          slug:true,
+          followers:{
+            select:{
+              follower:true
+            }
+          }
+        }
+       
+      },
     }
    });
 

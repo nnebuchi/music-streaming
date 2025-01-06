@@ -266,7 +266,7 @@ const authenticate = async (email, password) => {
                 };
 
                 const options = {
-                    expiresIn: 7 * 24 * 60 * 60, // Token expires in 7 days
+                    expiresIn: 365 * 24 * 60 * 60, // Token expires in 7 days
                 };
 
                 return {

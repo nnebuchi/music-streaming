@@ -4,7 +4,7 @@ const prisma  = new PrismaClient();
 exports.validateCommentOwnership = async (req, res, next) => {
     
     
-  const comment = await prisma.discussionComments.findFirst({
+  const comment = await prisma.discussioncomments.findFirst({
     where: {
       id: parseInt(req?.params?.comment_id),
       user_id: parseInt(req?.user?.id)

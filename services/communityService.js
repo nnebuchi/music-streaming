@@ -466,36 +466,48 @@ exports.commentReplies = async (parsedUrl, comment_id, res) => {
   }
 }
 
-exports.deleteComment = async (user_id, comment_id, res) => {
+
+exports.deleteComment = async (user_id, id, res) => {
   try {
-
-    const deleteReplies = await prisma.discussioncomments.delete({
-      where:{
-        parent:parseInt(comment_id),
-      }
+    // Find all replies to the comment (descendants)
+    const replies = await prisma.discussioncomments.findMany({
+      where: { parent: parseInt(id) },
+      select: { id: true }
     });
 
-    if(deleteReplies){
+    if (replies.length > 0) {
+      // Recursively delete all replies first
+      for (const reply of replies) {
+        await this.deleteComment(user_id, parseInt(reply.id), res);
+      }
+    }
 
+    // Once all replies are deleted, delete the current comment
     await prisma.discussioncomments.delete({
-      where:{
-        id:parseInt(comment_id)
-      }
+      where: { id: parseInt(id) }
     });
-    return res.status(200).json({
-      status:"success",
-      message:"comment deleted"
-    })
-  }
+
+    // Send the response only once after all operations are completed
+    if (!res.headersSent) {
+      return res.status(200).json({
+        status: "success",
+        message: "Comment and its descendants deleted"
+      });
+    }
   } catch (error) {
-    return res.status(400).json({
-      status:"fail",
-      message:"could not delete comment",
-      error:error
-    })
+    console.error(error);
+
+    // Send the response only once in case of an error
+    if (!res.headersSent) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Could not delete comment",
+        error: error.message
+      });
+    }
   }
- 
-}
+};
+
 exports.deletePost = async (user_id, post_id, res) => {
   console.log(post_id, user_id);
   
