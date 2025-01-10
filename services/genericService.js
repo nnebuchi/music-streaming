@@ -1,6 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const { product_photos } = require('../prisma/client');
-const prisma  = new PrismaClient();
+const prisma = require('../prisma/client');
 
 exports.version = async(version_no, platform, res)=>{
     // const settings = {
@@ -168,4 +166,31 @@ exports.trackDiscussion = async (res) => {
     }
   };
 
+
+  exports.getSliders = async (parsedUrl, res) => {
+    try {
+      let query = {where:{}};
+      if(parsedUrl.query.screen){
+        query.where.screen = parsedUrl.query.screen
+      }
+      if(parsedUrl.query.device){
+        query.where.device = parsedUrl.query.device
+      }
+      console.log(query);
+      
+      const sliders = await prisma.sliders.findMany(query);
+      return res.status(200).json({
+        status:"success",
+        data: sliders,
+      })
+    } catch (error) {
+      console.log(error);
+      
+      return res.status(400).json({
+        status:"fail",
+        error: error,
+        message: "Error getting sliders"
+      })
+    }
+  };
 

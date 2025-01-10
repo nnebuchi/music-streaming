@@ -1,6 +1,7 @@
 
 const { runValidation } = require('../lib/buchi');
 const genericService = require('../services/genericService');
+const url = require('url');
 
 exports.version = async(req, res)=>{
     const {version, platform} = req.body;
@@ -36,4 +37,9 @@ exports.storeSeeder = async(req, res) => {
 
 exports.trackDiscussion = async(req, res) => {
     return await genericService.trackDiscussion(res)
+}
+
+exports.getSliders = async(req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    return await genericService.getSliders(parsedUrl, res)
 }

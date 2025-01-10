@@ -24,6 +24,7 @@ model users {
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt @default(now())
     deleted_at          DateTime?
+    is_premium          Boolean @default(false)
     // Relationships
     socialProfiles      usersocialprofiles[]
     artistes            artistetofollower[] @relation("FollowerArtistes")

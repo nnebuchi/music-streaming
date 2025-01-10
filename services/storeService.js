@@ -4,15 +4,17 @@ const { generateOTP } = require("../utils/generic");
 exports.getProducts = async (parsedUrl, res) => {
     try {
         const queryString = parsedUrl.query;
-        const query = {};
+        const query = {
+            where:{
+                deleted_at: null
+            }
+        };
         if (queryString.latest && queryString.latest === 'true') {
             query.orderBy = { id: 'desc' };
         }
 
         if (queryString.category_id && queryString.category_id != 'all') {
-            query.where = {
-                category_id: parseInt(queryString.category_id)
-            }
+            query.where.category_id = parseInt(queryString.category_id)
         }
        
         const page = queryString.page ? parseInt(queryString.page) : 1;

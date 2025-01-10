@@ -588,7 +588,8 @@ exports.handleTrackCover = async (req, directory, res) => {
 
 
 exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
-  console.log(req.body);
+  // console.log(req.body);
+  // console.log(req.file);
   
   const { originalname, chunkIndex, totalChunks, track_id } = req.body;
   const tempPath = req.file.path;
@@ -631,14 +632,28 @@ exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
       // console.log(`Upload completed: ${songFile}`);
 
       // Update the track in the database with the new file path
-      let save_file_on_db = '';
-      if(type === 'audio'){
-        save_file_on_db = await this.update(track_id, { file: songFile });
-      }
+      // let save_file_on_db = '';
+      const data = type === 'audio' ? { file: songFile } : { video_file: songFile };
+      const save_file_on_db = await prisma.tracks.update({
+        where: {
+          id: parseInt(track_id)
+        },
+        data: data
+      })
+      // if(type === 'audio'){
+      //   save_file_on_db = await prisma.tracks.update({
+      //     where: {
+      //       id: parseInt(track_id)
+      //     },
+      //     data: {
+      //       file: songFile
+      //     }
+      //   })
+      // }
 
-      if(type === 'video'){
-        save_file_on_db = await this.update(track_id, { video_file: songFile });
-      }
+      // if(type === 'video'){
+      //   save_file_on_db = await this.update(track_id, { video_file: songFile });
+      // }
       
 
       if (save_file_on_db.status) {

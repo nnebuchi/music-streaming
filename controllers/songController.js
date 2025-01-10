@@ -209,11 +209,41 @@ exports.creators = async(req, res) => {
 
 exports.uploadFileChunk = async (req, res) => {
     const {track_id} = req.body
+    console.log(req.file);
+    
         const validate = await runValidation([
             {
                 input: { value: track_id, field: "track_id", type: "text" },
                 rules: { required: true},
-            }
+            },
+            // {
+            //     input: { value: req.file.file_chunk, field: "file_chunk", type: "file" },
+            //     rules: { required: true},
+            // },
+            {
+                input: { value: req.body.chunkIndex, field: "chunkIndex", type: "text" },
+                rules: { required: true},
+            },
+
+            {
+                input: { value: req.body.type, field: "type", type: "text" },
+                rules: { required: true},
+            },
+
+            {
+                input: { value: req.body.totalChunks, field: "totalChunks", type: "text" },
+                rules: { required: true},
+            },
+
+            {
+                input: { value: req.body.uploadId, field: "uploadId", type: "text" },
+                rules: { required: true},
+            },
+
+            {
+                input: { value: req.body.originalname, field: "originalname", type: "text" },
+                rules: { required: true},
+            },
         ])
         if(validate){
             if(validate?.status === false) {
