@@ -59,7 +59,7 @@ exports.handleAlbumCover = async (req, directory, res) => {
       if(update_album.status){
         return res.status(200).json({
           status: 'success',
-          message: "Track cover photo updated",
+          message: "Album cover photo updated",
           album_id: req.body.album_id
         });
       }else{
@@ -656,7 +656,7 @@ exports.addTrackFile = async (req, res, disk = 'local', type='audio') => {
       // }
       
 
-      if (save_file_on_db.status) {
+      if (save_file_on_db) {
         return res.status(200).json({
           status: 'success',
           message: "Chunk uploaded and file renamed",

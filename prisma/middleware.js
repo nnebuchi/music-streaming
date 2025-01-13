@@ -200,7 +200,7 @@ exports.song_middleware = async (params, next) => {
         // Directly processing tracks model
         await processTracks(result);
       } 
-      if (params.args.include.tracks) {
+      if (params.args.include && params.args.include.tracks) {
         // Handling included 'tracks' relationship
         if (Array.isArray(result)) {
           // Process each item in the result array
@@ -214,12 +214,11 @@ exports.song_middleware = async (params, next) => {
           await processTracks(result.tracks);
         }
       }
-      if(params.args.include.likedtracks  && params.args.include.likedtracks.include && params.args.include.likedtracks.include.track){
+      if(params.args.include && params.args.include.likedtracks  && params.args.include.likedtracks.include && params.args.include.likedtracks.include.track){
          
         if (Array.isArray(result)) {
           // Process each item in the result array
           for (const item of result) {
-            console.log(item.likedtracks);
             
             if (item.likedtracks) {
               for (const likedTrack of item.likedtracks) {

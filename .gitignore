@@ -6,3 +6,4 @@ migrations.sql
 prisma/schema__.prisma
 /migration_backup/*
 backup.js
+/ghm
