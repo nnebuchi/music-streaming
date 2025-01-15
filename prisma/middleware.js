@@ -51,7 +51,7 @@ exports.user_middleware = async (params, next) => {
 
   if (
     params.model === 'users' ||
-    (params.args && params.args.include && (params.args.include.user || params.args.include.author || (params.args.include.replies && params.args.include.replies.include && params.args.include.replies.include.user)))
+    (params?.args?.include && (params.args.include.user || params.args.include.author || params.args.include.replies?.include?.user))
 
   ) {
     if (params.model === 'users') {
@@ -90,7 +90,7 @@ exports.user_middleware = async (params, next) => {
         await processUser(result.author);
       }
     }
-    if(params.args.include.replies && params.args.include.replies.include.user){
+    if(params.args.include?.replies?.include?.user){
       
       if (Array.isArray(result)) {
         await Promise.all(
@@ -103,7 +103,7 @@ exports.user_middleware = async (params, next) => {
             
           })  
         );
-      }else if (result && result.replies && result.replies.include && result.replies.include.user) {
+      }else if ( result?.replies?.include?.user) {
         await Promise.all(
           result.replies.map(async (reply) => {
             await processUser(reply.user);
@@ -193,14 +193,14 @@ exports.song_middleware = async (params, next) => {
     // Check if the current model is 'tracks' or if 'tracks' is included in a relation
     if (
       params.model === 'tracks' ||
-      (params.args && params.args.include && (params.args.include.tracks || (params.args.include.likedtracks  && params.args.include.likedtracks.include && params.args.include.likedtracks.include.track) ))
+      (params?.args?.include && (params.args.include.tracks || params.args.include.likedtracks?.include?.track))
     ) {
       
       if (params.model === 'tracks') {
         // Directly processing tracks model
         await processTracks(result);
       } 
-      if (params.args.include && params.args.include.tracks) {
+      if (params?.args?.include?.tracks) {
         // Handling included 'tracks' relationship
         if (Array.isArray(result)) {
           // Process each item in the result array
@@ -214,7 +214,7 @@ exports.song_middleware = async (params, next) => {
           await processTracks(result.tracks);
         }
       }
-      if(params.args.include && params.args.include.likedtracks  && params.args.include.likedtracks.include && params.args.include.likedtracks.include.track){
+      if (params?.args?.include?.likedtracks?.include?.track) {
          
         if (Array.isArray(result)) {
           // Process each item in the result array
@@ -230,7 +230,7 @@ exports.song_middleware = async (params, next) => {
              
             }
           }
-        } else if (result && result.likedtracks) {
+        } else if (result?.likedtracks) {
           for (const likedTrack of result.likedtracks) {
             
             if (likedTrack.track) {
